@@ -10,6 +10,7 @@ from redis.asyncio import Redis
 
 from beadhub.api import create_app
 from beadhub.events import BeadClaimedEvent
+from beadhub.internal_auth import _internal_auth_header_value
 from beadhub.routes.bdh import _parse_command_line
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,159 @@ def auth_headers(api_key: str) -> dict[str, str]:
 
 def _jsonl(*rows: dict) -> str:
     return "\n".join(json.dumps(r) for r in rows) + "\n"
+
+
+@pytest.mark.asyncio
+async def test_bdh_sync_proxy_auth_does_not_revalidate_cloud_bearer(
+    db_infra, init_workspace, monkeypatch
+):
+    """A signed Cloud proxy identity remains authoritative during event enrichment."""
+    redis = await Redis.from_url(TEST_REDIS_URL, decode_responses=True)
+    try:
+        await redis.ping()
+    except Exception:
+        logger.warning("Redis is not available; skipping test", exc_info=True)
+        pytest.skip("Redis is not available")
+    await redis.flushdb()
+
+    internal_secret = "proxy-sync-test-secret"
+    monkeypatch.setenv("BEADHUB_INTERNAL_AUTH_SECRET", internal_secret)
+    published_status_events = []
+
+    async def record_status_events(_redis, **kwargs):
+        published_status_events.append(kwargs)
+
+    monkeypatch.setattr(
+        "beadhub.routes.bdh.publish_bead_status_events", record_status_events
+    )
+
+    try:
+        app = create_app(db_infra=db_infra, redis=redis, serve_frontend=False)
+        async with LifespanManager(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                project_slug = f"proxy-sync-{uuid.uuid4().hex[:8]}"
+                init = await init_workspace(
+                    client,
+                    project_slug=project_slug,
+                    repo_origin=TEST_REPO_ORIGIN,
+                    alias="cloud-agent",
+                    human_name="Cloud Agent",
+                    role="developer",
+                )
+
+                principal_id = str(uuid.uuid4())
+                actor_id = init["workspace_id"]
+                proxy_auth = _internal_auth_header_value(
+                    secret=internal_secret,
+                    project_id=init["project_id"],
+                    principal_type="k",
+                    principal_id=principal_id,
+                    actor_id=actor_id,
+                )
+                headers = {
+                    # This is a Cloud key, not a standalone aweb key. The signed
+                    # proxy context above is the authenticated identity.
+                    "Authorization": f"Bearer bh_sk_{'x' * 32}",
+                    "X-Project-ID": init["project_id"],
+                    "X-API-Key": principal_id,
+                    "X-Aweb-Actor-ID": actor_id,
+                    "X-BH-Auth": proxy_auth,
+                }
+
+                resp = await client.post(
+                    "/v1/bdh/sync",
+                    headers=headers,
+                    json={
+                        "workspace_id": actor_id,
+                        "repo_id": init["repo_id"],
+                        "alias": init["alias"],
+                        "human_name": init["human_name"],
+                        "repo_origin": TEST_REPO_ORIGIN,
+                        "role": "developer",
+                        "sync_mode": "full",
+                        "issues_jsonl": _jsonl(
+                            {"id": "bd-cloud", "title": "Cloud bead", "status": "open"}
+                        ),
+                        "command_line": "create --title Cloud bead",
+                    },
+                )
+
+                assert resp.status_code == 200, resp.text
+                assert len(published_status_events) == 1
+                assert published_status_events[0]["workspace_id"] == actor_id
+                assert published_status_events[0]["project_slug"] == project_slug
+    finally:
+        await redis.flushdb()
+        await redis.aclose()
+
+
+@pytest.mark.asyncio
+async def test_bdh_sync_preserves_standalone_agent_lifecycle_guard(
+    db_infra, init_workspace
+):
+    """A retired standalone agent cannot sync a status-changing issue."""
+    redis = await Redis.from_url(TEST_REDIS_URL, decode_responses=True)
+    try:
+        await redis.ping()
+    except Exception:
+        logger.warning("Redis is not available; skipping test", exc_info=True)
+        pytest.skip("Redis is not available")
+    await redis.flushdb()
+
+    try:
+        app = create_app(db_infra=db_infra, redis=redis, serve_frontend=False)
+        async with LifespanManager(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                init = await init_workspace(
+                    client,
+                    project_slug=f"retired-sync-{uuid.uuid4().hex[:8]}",
+                    repo_origin=TEST_REPO_ORIGIN,
+                    alias="retired-agent",
+                    human_name="Retired Agent",
+                    role="developer",
+                )
+                aweb_db = db_infra.get_manager("aweb")
+                await aweb_db.execute(
+                    "UPDATE {{tables.agents}} SET status = 'retired' WHERE agent_id = $1",
+                    uuid.UUID(init["workspace_id"]),
+                )
+
+                resp = await client.post(
+                    "/v1/bdh/sync",
+                    headers=auth_headers(init["api_key"]),
+                    json={
+                        "workspace_id": init["workspace_id"],
+                        "repo_id": init["repo_id"],
+                        "alias": init["alias"],
+                        "human_name": init["human_name"],
+                        "repo_origin": TEST_REPO_ORIGIN,
+                        "role": "developer",
+                        "sync_mode": "full",
+                        "issues_jsonl": _jsonl(
+                            {"id": "bd-retired", "title": "Retired bead", "status": "open"}
+                        ),
+                        "command_line": "create --title Retired bead",
+                    },
+                )
+
+                assert resp.status_code == 410, resp.text
+                assert resp.json()["detail"] == "Agent is retired"
+
+                beads_db = db_infra.get_manager("beads")
+                issue = await beads_db.fetch_one(
+                    "SELECT bead_id FROM {{tables.beads_issues}} "
+                    "WHERE project_id = $1 AND bead_id = $2",
+                    uuid.UUID(init["project_id"]),
+                    "bd-retired",
+                )
+                assert issue is None
+    finally:
+        await redis.flushdb()
+        await redis.aclose()
 
 
 @pytest.mark.asyncio

@@ -33,6 +33,20 @@ async def resolve_aweb_identity(request: Request, db) -> AwebIdentity:
     details = await verify_bearer_token_details(db, token, manager_name="aweb")
     project_id = (details.get("project_id") or "").strip()
     agent_id = (details.get("agent_id") or "").strip()
+    return await resolve_aweb_identity_from_ids(
+        db,
+        project_id=project_id,
+        agent_id=agent_id,
+    )
+
+
+async def resolve_aweb_identity_from_ids(
+    db,
+    *,
+    project_id: str,
+    agent_id: str,
+) -> AwebIdentity:
+    """Load a previously authenticated aweb identity and enforce its lifecycle."""
     if not project_id or not agent_id:
         raise HTTPException(status_code=401, detail="Invalid API key")
 

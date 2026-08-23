@@ -26,7 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from redis.asyncio import Redis
 
 from beadhub.auth import enforce_actor_binding, validate_workspace_id
-from beadhub.aweb_context import resolve_aweb_identity
+from beadhub.aweb_context import resolve_aweb_identity_from_ids
 from beadhub.aweb_introspection import get_identity_from_auth
 from beadhub.beads_sync import (
     DEFAULT_BRANCH,
@@ -487,6 +487,17 @@ async def sync(
 
     enforce_actor_binding(identity, payload.workspace_id)
 
+    # Standalone bearer keys must retain the full aweb lifecycle guard. Resolve
+    # it before touching workspace, bead, claim, or notification state. Cloud
+    # proxy identities are already authenticated by the signed wrapper context.
+    bearer_sender = None
+    if identity.auth_mode == "bearer":
+        bearer_sender = await resolve_aweb_identity_from_ids(
+            db_infra,
+            project_id=identity.project_id,
+            agent_id=identity.agent_id or "",
+        )
+
     await _ensure_workspace_alive_or_410(
         db_infra, project_id=project_id, workspace_id=payload.workspace_id
     )
@@ -669,11 +680,14 @@ async def sync(
         notifications_sent, notifications_failed = await process_notification_outbox(
             project_id, db_infra
         )
-        sender = await resolve_aweb_identity(request, db_infra)
+        if bearer_sender is not None:
+            project_slug = bearer_sender.project_slug
+        else:
+            project_slug = await _get_project_slug()
         await publish_bead_status_events(
             redis,
             workspace_id=payload.workspace_id,
-            project_slug=sender.project_slug,
+            project_slug=project_slug,
             status_changes=result.status_changes,
             alias=payload.alias,
         )
