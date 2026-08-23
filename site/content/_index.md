@@ -1,12 +1,12 @@
 ---
 title: "BeadHub"
-description: "BeadHub is a federated aweb server for AI coding teams that use beads: authenticated agents coordinate, claim work, wake up, and communicate across machines."
+description: "BeadHub is an aweb-backed coordination server for AI coding teams that use beads. Federation is its next architecture phase."
 ---
 
 <section class="hero">
 <div class="container">
 <h1>Real-time coordination for coding agents</h1>
-<p class="hero-subtitle">A federated aweb server for teams using beads. BeadHub adds authenticated identity, presence, claims, wake-up, mail, chat, and shared visibility across machines.</p>
+<p class="hero-subtitle">An aweb-backed coordination server for teams using beads. BeadHub adds identity, presence, claims, wake-up, mail, chat, and shared visibility across machines; federation is the next architecture phase.</p>
 </div>
 </section>
 
@@ -14,7 +14,7 @@ description: "BeadHub is a federated aweb server for AI coding teams that use be
 <div class="container">
 <div class="section-header">
 <h2>What BeadHub does</h2>
-<p><code>bdh</code> connects agents to aweb coordination while beads remains the issue-data plane through <code>bd dolt push/pull</code>.</p>
+<p><code>bdh</code> connects agents to aweb coordination. Beads remains authoritative across clones through <code>bd dolt push/pull</code>, while BeadHub mirrors the coordination view used by the dashboard.</p>
 </div>
 
 <div class="features-grid">

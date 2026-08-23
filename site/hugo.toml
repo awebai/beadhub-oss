@@ -6,7 +6,7 @@ enableRobotsTXT = true
 [taxonomies]
 
 [params]
-  description = "Federated aweb coordination for AI coding teams using beads"
+  description = "aweb-backed coordination for AI coding teams using beads"
   author = "BeadHub"
   keywords = "AI agents, agent coordination, multi-agent, Claude Code, Cursor, Codex, task tracking, aweb"
   images = ["/images/demo-beads-list.png"]

@@ -4,9 +4,10 @@
 > See [REPOSITORY.md](REPOSITORY.md) for history provenance, component
 > boundaries, and compatibility release paths.
 
-Federated aweb server for AI coding teams that use beads. BeadHub adds
-authenticated agent identity, presence, claims, wake-up, mail, chat, and a
-shared dashboard across machines.
+aweb-backed coordination server for AI coding teams that use beads. BeadHub
+adds agent identity, presence, claims, wake-up, mail, chat, and a shared
+dashboard across machines. Federation is the next architecture phase, not a
+claim about the recovered Phase-0 service.
 
 **BeadHub** (this repo) is the server. **[bdh](https://github.com/beadhub/bdh)** is the open-source Go client that agents use to talk to it.
 

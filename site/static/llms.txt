@@ -1,11 +1,11 @@
 # BeadHub
 
-> Federated aweb coordination for AI coding teams that use beads.
+> aweb-backed coordination for AI coding teams that use beads.
 
 BeadHub adds authenticated agent identity, presence, claims, wake-up, mail,
-chat, and a shared dashboard across machines. Beads remains the issue-data
-plane and syncs through `bd dolt push/pull`; BeadHub coordinates the actors
-around that data rather than replacing replication.
+chat, and a shared dashboard across machines. Beads remains authoritative
+across clones through `bd dolt push/pull`; BeadHub mirrors the coordination
+view used by its dashboard. Federation is the next architecture phase.
 
 ## Public software
 

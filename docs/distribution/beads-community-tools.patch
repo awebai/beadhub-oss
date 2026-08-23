@@ -1,5 +1,5 @@
 diff --git a/docs/COMMUNITY_TOOLS.md b/docs/COMMUNITY_TOOLS.md
-index 7d6e6fd7..244a0353 100644
+index 7d6e6fd7..4999000e 100644
 --- a/docs/COMMUNITY_TOOLS.md
 +++ b/docs/COMMUNITY_TOOLS.md
 @@ -19,3 +19,7 @@ A curated list of community-built UIs, extensions, and integrations for Beads. R
@@ -8,6 +8,6 @@ index 7d6e6fd7..244a0353 100644
 +
 +## Coordination Servers
 +
-+- **[BeadHub](https://beadhub.ai/)** - Federated aweb server and `bdh` CLI for beads teams: authenticated agent identity, presence, claims, wake-up, mail, chat, and a shared dashboard across machines. Beads remains the issue-data plane through `bd dolt push/pull`. ([Source](https://github.com/awebai/beadhub-oss))
++- **[BeadHub](https://beadhub.ai/)** - aweb-backed coordination server and `bdh` CLI for beads teams: agent identity, presence, claims, wake-up, mail, chat, and a shared dashboard across machines. Beads remains authoritative across clones through `bd dolt push/pull`; federation is the next architecture phase. ([Source](https://github.com/awebai/beadhub-oss))
 +
  ## Web UIs

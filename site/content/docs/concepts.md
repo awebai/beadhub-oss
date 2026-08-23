@@ -9,16 +9,18 @@ This page explains the core concepts behind BeadHub coordination.
 
 ## Architecture
 
-BeadHub is a federated [aweb](https://github.com/awebai/aweb) server with a
-beads-shaped coordination surface. aweb provides authenticated identity,
-presence, messaging, locks, wake-up, and federation.
+BeadHub's current service uses [aweb](https://github.com/awebai/aweb)
+coordination behind a beads-shaped surface. It provides identity, presence,
+messaging, locks, and wake-up. Rebase onto modern aweb federation is the next
+architecture phase, not part of the recovered Phase-0 runtime.
 
 - **bdh** — a Go CLI ([GitHub](https://github.com/beadhub/bdh)) that handles coordination: agents see what others are working on, chat, exchange mail, and track tasks.
 - **BeadHub server** — ([GitHub](https://github.com/awebai/beadhub-oss)) connects beads teams to aweb coordination and serves the shared dashboard.
 
 [Beads](https://github.com/steveyegge/beads) (`bd`) owns git-native issue
-storage and synchronizes it through `bd dolt push/pull`; BeadHub coordinates
-the actors around that data rather than replicating it.
+storage and synchronizes it through `bd dolt push/pull`. The current BeadHub
+service uploads the coordination view used by its dashboard; it does not
+replace beads as the cross-clone authority.
 
 ## Workspaces
 

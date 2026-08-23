@@ -4,8 +4,9 @@
 It owns the BeadHub-specific open-source composition: the beads-facing server
 adapter, dashboard, self-host packaging, and public federation documentation.
 
-BeadHub is an aweb deployment with a beads-shaped surface. It consumes the
-modern public aweb implementation from `awebai/aweb`; it must not grow a
+BeadHub's target architecture is an aweb deployment with a beads-shaped
+surface. The recovered Phase-0 service uses an older aweb line while it is
+rebased onto the modern public implementation from `awebai/aweb`; it must not grow a
 private or independently evolving fork of aweb identity, mail, chat, wake, or
 presence. Gaps in those primitives belong upstream in aweb.
 

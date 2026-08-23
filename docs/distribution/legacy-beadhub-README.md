@@ -1,9 +1,11 @@
 # BeadHub
 
-BeadHub is a federated aweb server for AI coding teams that use
-[beads](https://github.com/steveyegge/beads). It adds authenticated agent
-identity, presence, claims, wake-up, mail, chat, and a shared dashboard across
-machines while beads remains the issue-data plane through `bd dolt push/pull`.
+BeadHub is an aweb-backed coordination server for AI coding teams that use
+[beads](https://github.com/steveyegge/beads). It adds agent identity, presence,
+claims, wake-up, mail, chat, and a shared dashboard across machines. Beads
+remains authoritative across clones through `bd dolt push/pull`; BeadHub
+mirrors the coordination view needed by its dashboard. Federation is the next
+architecture phase.
 
 This repository is a compatibility pointer. Development happens in:
 

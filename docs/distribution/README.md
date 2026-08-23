@@ -21,7 +21,8 @@ OSS server, compatible CLI, hosted service, beads, and aweb.
 [`beads-community-tools.patch`](beads-community-tools.patch) is prepared
 against `steveyegge/beads` commit
 `6331a9771a5a58dcf9c9313970d0db7c8b4756f8`. It adds BeadHub as a coordination
-server, links `beadhub.ai`, and describes the federated aweb/beads boundary.
+server, links `beadhub.ai`, and describes the current aweb/beads boundary
+without presenting the planned federation rebase as already shipped.
 Apply it in an up-to-date beads checkout, review upstream changes, then submit
 through the beads contribution process. This repository does not push to or
 impersonate the unrelated upstream checkout.
