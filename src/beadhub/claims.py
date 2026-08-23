@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
@@ -16,6 +17,14 @@ if TYPE_CHECKING:
     from .db import DatabaseInfra
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ClaimUpsertResult:
+    """Outcome of an idempotent claim mutation."""
+
+    created: bool
+    conflict: Optional[dict[str, Any]] = None
 
 
 async def fetch_workspace_aliases(
@@ -178,10 +187,8 @@ async def upsert_claim(
     alias: str,
     human_name: str,
     bead_id: str,
-) -> Optional[dict[str, Any]]:
-    """Attempt to claim a bead. Returns None on success, or the conflicting
-    claim dict (with alias, human_name, workspace_id) if already held by
-    another workspace."""
+) -> ClaimUpsertResult:
+    """Attempt to claim a bead and distinguish creation from replay."""
     server_db = db_infra.get_manager("server")
 
     # Resolve apex (root parent) for this bead
@@ -202,13 +209,16 @@ async def upsert_claim(
             UUID(workspace_id),
         )
         if existing:
-            return {
-                "workspace_id": str(existing["workspace_id"]),
-                "alias": existing["alias"],
-                "human_name": existing["human_name"],
-            }
+            return ClaimUpsertResult(
+                created=False,
+                conflict={
+                    "workspace_id": str(existing["workspace_id"]),
+                    "alias": existing["alias"],
+                    "human_name": existing["human_name"],
+                },
+            )
 
-        await tx.execute(
+        row = await tx.fetch_one(
             """
             INSERT INTO {{tables.bead_claims}} (
                 project_id, workspace_id, alias, human_name, bead_id,
@@ -221,8 +231,8 @@ async def upsert_claim(
                 human_name = EXCLUDED.human_name,
                 apex_bead_id = EXCLUDED.apex_bead_id,
                 apex_repo_name = EXCLUDED.apex_repo_name,
-                apex_branch = EXCLUDED.apex_branch,
-                claimed_at = EXCLUDED.claimed_at
+                apex_branch = EXCLUDED.apex_branch
+            RETURNING (xmax = 0) AS created
             """,
             UUID(project_id),
             UUID(workspace_id),
@@ -254,7 +264,7 @@ async def upsert_claim(
             UUID(workspace_id),
         )
 
-    return None
+    return ClaimUpsertResult(created=bool(row and row["created"]))
 
 
 async def release_bead_claims(

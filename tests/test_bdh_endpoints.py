@@ -9,6 +9,7 @@ from httpx import ASGITransport, AsyncClient
 from redis.asyncio import Redis
 
 from beadhub.api import create_app
+from beadhub.events import BeadClaimedEvent
 from beadhub.routes.bdh import _parse_command_line
 
 logger = logging.getLogger(__name__)
@@ -76,7 +77,7 @@ async def test_bdh_command_requires_workspace_and_returns_claims(db_infra, init_
 
 
 @pytest.mark.asyncio
-async def test_bdh_sync_sets_and_clears_claims(db_infra, init_workspace):
+async def test_bdh_sync_sets_and_clears_claims(db_infra, init_workspace, monkeypatch):
     redis = await Redis.from_url(TEST_REDIS_URL, decode_responses=True)
     try:
         await redis.ping()
@@ -84,6 +85,13 @@ async def test_bdh_sync_sets_and_clears_claims(db_infra, init_workspace):
         logger.warning("Redis is not available; skipping test", exc_info=True)
         pytest.skip("Redis is not available")
     await redis.flushdb()
+
+    published_events = []
+
+    async def record_event(_redis, event):
+        published_events.append(event)
+
+    monkeypatch.setattr("beadhub.routes.bdh.publish_event", record_event)
 
     try:
         app = create_app(db_infra=db_infra, redis=redis, serve_frontend=False)
@@ -147,6 +155,7 @@ async def test_bdh_sync_sets_and_clears_claims(db_infra, init_workspace):
                 assert len(claim_list) == 1
                 assert claim_list[0]["bead_id"] == "bd-1"
                 assert claim_list[0]["workspace_id"] == init["workspace_id"]
+                assert len([event for event in published_events if isinstance(event, BeadClaimedEvent)]) == 1
 
                 # Incremental sync clears claim when closing.
                 resp = await client.post(

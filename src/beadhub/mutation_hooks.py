@@ -202,7 +202,7 @@ async def _cascade_task_status_changed(
     project_slug = await get_workspace_project_slug(redis, actor_id)
 
     if new_status == "in_progress":
-        conflict = await upsert_claim(
+        claim_result = await upsert_claim(
             db_infra,
             project_id=project_id,
             workspace_id=actor_id,
@@ -210,10 +210,15 @@ async def _cascade_task_status_changed(
             human_name=workspace["human_name"] or "",
             bead_id=task_ref,
         )
-        if conflict:
+        if claim_result.conflict:
             logger.info(
-                "Task %s already claimed by %s, skipping event", task_ref, conflict["alias"]
+                "Task %s already claimed by %s, skipping event",
+                task_ref,
+                claim_result.conflict["alias"],
             )
+            return
+
+        if not claim_result.created:
             return
 
         await publish_event(

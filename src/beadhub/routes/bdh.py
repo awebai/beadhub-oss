@@ -593,7 +593,7 @@ async def sync(
 
     if bead_id:
         if cmd == "update" and status == "in_progress":
-            claim_conflict = await upsert_claim(
+            claim_result = await upsert_claim(
                 db_infra,
                 project_id=project_id,
                 workspace_id=payload.workspace_id,
@@ -601,7 +601,8 @@ async def sync(
                 human_name=payload.human_name or "",
                 bead_id=bead_id,
             )
-            if claim_conflict is None:
+            claim_conflict = claim_result.conflict
+            if claim_result.created:
                 title = await _get_bead_title(beads_db, project_id, bead_id)
                 await publish_event(
                     redis,
