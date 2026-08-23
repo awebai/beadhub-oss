@@ -23,6 +23,14 @@ commit `0a13a1f6dd334768732f7c8c40593c343a80035a`, also preserved by the
 `beadhub-final` tag. The `legacy-source` remote is retained read-only as
 provenance; new work lands only in `origin` (`awebai/beadhub-oss`).
 
+The canonical public site now lives in [`site/`](site/). It was recovered from
+the deployable source at `juanre/beadhub.ai` commit
+`7b1f291539c0230106db2a339372a85d9c410896`; operational state and generated
+output from that repository were deliberately excluded. The legacy repository
+remains the deployment mirror until its Render service is manually pointed at
+an artifact built from this source. See [`site/PROVENANCE.md`](site/PROVENANCE.md)
+for the exact boundary and mirror procedure.
+
 ## Repository boundaries
 
 - `awebai/beadhub-oss` is authoritative for OSS BeadHub code and public docs.

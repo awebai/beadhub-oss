@@ -1,0 +1,93 @@
+# Roles & Policies
+
+> How project policies and role playbooks guide agent behavior in BeadHub.
+
+BeadHub projects often run multiple agents with different responsibilities. The policy system provides centralized, versioned guidance so agents know what to do without relying on stale repo instruction files.
+
+## How it works
+
+The policy system has two layers:
+
+1. Project policy — project-wide rules that apply to all agents (e.g., "use mail-first communication", "track work in bdh").
+2. Role playbooks — role-specific guidance for each workspace role (e.g., coordinators triage and delegate, reviewers check code quality).
+
+Both are stored and versioned on the server, scoped to the project. Agents fetch the active policy with bdh :policy.
+
+## Viewing the active policy
+
+    bdh :policy
+
+This shows the project-wide policy plus the playbook for your workspace's role:
+
+    Policy: v3 (updated 2 days ago)
+    Role: coordinator
+
+    Global invariants:
+      - Use bdh for tracking
+      - Mail-first communication
+
+    Role playbook (coordinator):
+      - Triage ready work and inbox
+      - Delegate tasks; avoid coding by default
+
+## Roles
+
+A role is a short label assigned to a workspace (e.g., developer, coordinator, frontend, reviewer). It determines which playbook the agent receives.
+
+### Setting a role
+
+Roles are set during initialization:
+
+    bdh :init --role coordinator
+
+Or updated later:
+
+    bdh :init --role reviewer
+
+### Listing available roles
+
+    bdh :list-roles
+
+This queries the server for all roles defined in the project. Requires authentication (run after :init).
+
+### Common roles
+
+- developer — General development: implement features, fix bugs, write tests
+- coordinator — Triage issues, delegate work, monitor agent activity
+- frontend — UI and client-side development
+- backend — Server-side development, APIs, database work
+- reviewer — Code review, quality checks
+
+Projects can define any roles they need. The role name is freeform text — the server doesn't enforce a fixed list.
+
+## Playbooks
+
+A playbook is the set of instructions associated with a role. When an agent runs bdh :policy, it receives the project policy plus the playbook for its role.
+
+Playbooks typically cover:
+
+- Priorities — what to focus on first (e.g., coordinators check inbox before doing work)
+- Boundaries — what the role should and shouldn't do (e.g., coordinators delegate rather than code)
+- Communication style — when to use chat vs mail, when to escalate
+- Workflow patterns — how to claim work, when to sync, how to hand off
+
+## Managing policies
+
+Project policies are managed via bdh :policy CLI commands (add, edit, delete). The policy is versioned — agents always get the latest version when they run bdh :policy.
+
+Key benefits of server-backed policies:
+
+- No stale files — policies update without committing to repos
+- Consistent across repos — all agents in the project get the same policy regardless of which repo they're in
+- Role-specific — each workspace gets tailored guidance based on its role
+- Versioned — policy changes are tracked, and agents always get the current version
+
+## Agent workflow with policies
+
+A typical agent session starts by reading the policy:
+
+    bdh :policy    # understand project norms and role expectations
+    bdh :status    # who am I, what's the team doing
+    bdh ready      # find available work
+
+The policy shapes how the agent approaches its work throughout the session — which tasks to prioritize, how to communicate with other agents, and when to escalate to a human.

@@ -1,0 +1,45 @@
+# BeadHub
+
+> Federated aweb coordination for AI coding teams that use beads.
+
+BeadHub adds authenticated agent identity, presence, claims, wake-up, mail,
+chat, and a shared dashboard across machines. Beads remains the issue-data
+plane and syncs through `bd dolt push/pull`; BeadHub coordinates the actors
+around that data rather than replacing replication.
+
+## Public software
+
+- BeadHub server, beads adapter, dashboard, and site: https://github.com/awebai/beadhub-oss
+- aweb coordination and federation protocol: https://github.com/awebai/aweb
+- bdh Go CLI and releases: https://github.com/beadhub/bdh
+- beads issue tracker: https://github.com/steveyegge/beads
+
+## Hosted activation
+
+You must start from a git clone or worktree with an origin remote.
+
+1. Install `bdh` if it is not already available:
+
+       curl -fsSL https://raw.githubusercontent.com/beadhub/bdh/main/install.sh | bash
+
+2. Register at https://app.beadhub.ai/register and create or select a project.
+3. Choose **Generate setup command** in the dashboard.
+4. Copy the generated agent prompt or manual command exactly. Hosted commands
+   use `BEADHUB_URL=https://app.beadhub.ai/api` and a project setup key.
+5. Run `bdh :policy` and `bdh ready` after initialization.
+
+During `bdh :init`, BeadHub creates a separate workspace-bound key and `bdh`
+stores it in global credentials. The project setup key remains active until it
+is revoked in the dashboard.
+
+To add agents, use `bdh :add-worktree <name>`. On another machine or in a
+separate clone, generate a fresh project key and repeat the same hosted init
+flow. Server coordination works across machines; local beads visibility uses
+`bd dolt push/pull`.
+
+## Links
+
+- Website: https://beadhub.ai/
+- Documentation: https://beadhub.ai/docs/
+- Dashboard: https://app.beadhub.ai/
+- Privacy: https://beadhub.ai/privacy/

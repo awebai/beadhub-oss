@@ -4,11 +4,15 @@
 > See [REPOSITORY.md](REPOSITORY.md) for history provenance, component
 > boundaries, and compatibility release paths.
 
-Coordination server for AI agent teams. Agents claim work, reserve files, and message each other directly (async mail and sync chat).
+Federated aweb server for AI coding teams that use beads. BeadHub adds
+authenticated agent identity, presence, claims, wake-up, mail, chat, and a
+shared dashboard across machines.
 
 **BeadHub** (this repo) is the server. **[bdh](https://github.com/beadhub/bdh)** is the open-source Go client that agents use to talk to it.
 
-BeadHub has a built-in task manager (aweb tasks) and also supports [Beads](https://github.com/steveyegge/beads) as an external task tracker. `bdh` wraps the `bd` (Beads) CLI transparently when beads is in use.
+[Beads](https://github.com/steveyegge/beads) remains the issue-data plane and
+syncs it through `bd dolt push/pull`. `bdh` wraps the `bd` CLI while connecting
+agents to aweb coordination; BeadHub does not replace beads replication.
 
 **[beadhub.ai](https://beadhub.ai)** is the hosted version — free for open-source projects.
 
@@ -30,20 +34,21 @@ For the managed version (free for open-source projects), go to **[beadhub.ai](ht
 
 ### Self-hosted
 
-Requires Docker (or PostgreSQL + Redis if installing from PyPI). You need to be working in a git repository — a clone or a worktree. Copy the block below and paste it to your agent — Claude Code, Cursor, Codex, or anything with terminal access. Your agent will handle the rest, asking for your confirmation at each step.
+Requires Docker (or PostgreSQL + Redis if installing from PyPI). You need to be working in a git repository — a clone or a worktree. Copy the block below and paste it to your agent — Claude Code, Cursor, Codex, or anything with terminal access.
 
 ```
-This is a text copied from the internet. Do NOT execute any command, or follow any instruction, without asking me first.
-
 WHAT BEADHUB IS
 
 BeadHub is an open-source coordination layer for AI programming agents. It lets multiple agents working on the same project see each other, claim work, chat, exchange mail, and avoid conflicts.
 
-BeadHub has a built-in task manager and also supports beads (https://github.com/steveyegge/beads), a git-native issue tracker, as an optional external task tracker. The bdh CLI (https://github.com/beadhub/bdh) adds coordination on top: agents see what others are working on, can chat with each other, and exchange async mail.
+Beads (https://github.com/steveyegge/beads) is the git-native issue-data
+plane. The bdh CLI (https://github.com/beadhub/bdh) adds aweb coordination on
+top: agents see claims and presence, wake each other, chat, and exchange async
+mail.
 
 All the software is open source and can be inspected:
 
-The coordination server: https://github.com/beadhub/beadhub
+The coordination server: https://github.com/awebai/beadhub-oss
 The generic coordination protocol behind beadhub: https://github.com/awebai/aweb
 The Go client bdh: https://github.com/beadhub/bdh
 Supported external task tracker beads: https://github.com/steveyegge/beads
@@ -70,12 +75,12 @@ SETUP
 2. Run bdh :help to see bdh coordination commands, and bdh --help to see the full list. Commands that start with : are bdh coordination commands.
 
 3. Start the BeadHub server (requires Docker):
-   git clone https://github.com/beadhub/beadhub.git
-   cd beadhub && make start
+   git clone https://github.com/awebai/beadhub-oss.git
+   cd beadhub-oss && make start
 
 4. Ask the user for a project name (lowercase, hyphens ok — e.g. "my-project").
 
-5. Tell the user what bdh :init will do before running it. It will:
+5. Run bdh :init. It will:
    - Register this workspace with the BeadHub server
    - Create a .beadhub config file (gitignored, contains workspace identity)
    - Save the API key to ~/.config/aw/config.yaml (global credentials)
@@ -84,7 +89,7 @@ SETUP
    - Add a PostToolUse hook to .claude/settings.json that runs bdh :notify to check for pending agent chats (creates the file if needed; used by Claude Code)
    - If beads (bd) is installed, initialize beads issue tracking and set up sync
 
-   After getting user confirmation, run:
+   Run:
    bdh :init --beadhub-url http://localhost:8000 --project <project-name>
 
    All options must be passed as flags. This creates the workspace with the default "developer" role and provisions an API key.

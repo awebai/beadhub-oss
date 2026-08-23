@@ -1,0 +1,37 @@
+# Getting Started
+
+> Install bdh and connect a git clone or worktree to hosted BeadHub.
+
+## Prerequisite
+
+Use a git clone or worktree with an origin remote. `bdh` cannot initialize a
+directory that is not a git workspace.
+
+## Install bdh
+
+    bdh --version
+    curl -fsSL https://raw.githubusercontent.com/beadhub/bdh/main/install.sh | bash
+
+## Initialize from the dashboard
+
+1. Register at https://app.beadhub.ai/register and create or select a project.
+2. Choose **Generate setup command**.
+3. Copy either the agent prompt or manual command exactly.
+
+The manual form is:
+
+    BEADHUB_URL=https://app.beadhub.ai/api BEADHUB_API_KEY=<project-key> bdh :init
+
+Do not omit the `/api` suffix. The project key initializes the workspace;
+BeadHub creates a separate workspace-bound key and `bdh` stores it in global
+credentials.
+
+Then run:
+
+    bdh :list-roles
+    bdh :policy
+    bdh ready
+
+Add another local agent with `bdh :add-worktree <name>`. For another machine or
+clone, generate a fresh project key and repeat the init flow. Use
+`bd dolt push/pull` for the beads issue-data plane across clones.

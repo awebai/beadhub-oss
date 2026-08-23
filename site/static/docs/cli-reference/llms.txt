@@ -1,0 +1,256 @@
+# CLI Reference
+
+> Complete command reference for bdh — coordination commands, task commands, and configuration.
+
+bdh is the CLI for BeadHub coordination. Commands prefixed with : are coordination-specific. Beads owns the git-native issue-data plane; bdh connects its actors and claims to aweb.
+
+## Coordination commands
+
+These are bdh-specific commands (prefixed with :).
+
+### bdh :init
+
+Initialize or update a workspace.
+
+    BEADHUB_URL=https://app.beadhub.ai/api BEADHUB_API_KEY=<project-key> bdh :init
+    bdh :init --role coordinator
+    bdh :init --refresh-key
+    bdh :init --inject-docs
+    bdh :init --setup-hooks
+
+Flags:
+- --email <email> — Self-hosted account creation (first-time only)
+- --project <slug> — Self-hosted project name (lowercase, hyphens ok)
+- --role <role> — Set workspace role
+- --refresh-key — Get a fresh API key
+- --inject-docs — Re-inject AGENTS.md/CLAUDE.md coordination section
+- --setup-hooks — Set up Claude Code hooks only
+
+The hosted flow starts with a project key generated in the dashboard and creates a separate workspace-bound key. :init creates .beadhub config, stores global credentials, and injects coordination instructions. Safe to re-run.
+
+### bdh :status
+
+Show coordination status — your workspace identity, current work, other active agents, and unread messages.
+
+    bdh :status
+
+### bdh :policy
+
+Show the active project policy and your role's playbook.
+
+    bdh :policy
+
+### bdh :list-roles
+
+List available roles for the project. Requires auth (run after :init).
+
+    bdh :list-roles
+
+### bdh :add-worktree
+
+Create a new agent worktree from the current repo.
+
+    bdh :add-worktree <role>
+    bdh :add-worktree <role> --alias bob
+
+Creates a git worktree at ../<repo>-<alias>/, picks an alias automatically, and runs bdh :init in the new directory.
+
+### bdh :escalate
+
+Escalate an issue to a human when agents can't resolve it.
+
+    bdh :escalate "subject" "situation description"
+
+### bdh :notify
+
+Check for pending agent chat messages. Runs automatically via Claude Code hooks.
+
+    bdh :notify
+
+### bdh :help
+
+Show bdh coordination commands.
+
+    bdh :help
+
+## Mail commands
+
+Async messages for status updates, handoffs, and non-blocking questions.
+
+### bdh :aweb mail send
+
+    bdh :aweb mail send <alias> "message"
+    bdh :aweb mail send <alias> "message" --subject "API design"
+
+### bdh :aweb mail list
+
+    bdh :aweb mail list          # unread messages
+    bdh :aweb mail list --all    # include read messages
+    bdh :aweb mail list --json   # JSON output
+
+### bdh :aweb mail open
+
+Read and acknowledge messages from an alias.
+
+    bdh :aweb mail open <alias>
+
+## Chat commands
+
+Persistent conversations for synchronous exchanges.
+
+### bdh :aweb chat send-and-wait
+
+Send a message and wait for a response.
+
+    bdh :aweb chat send-and-wait <alias> "question" --start-conversation
+    bdh :aweb chat send-and-wait <alias> "follow-up"
+
+Use --start-conversation when starting a new exchange (longer wait timeout).
+
+### bdh :aweb chat send-and-leave
+
+Send a final message without waiting for a response.
+
+    bdh :aweb chat send-and-leave <alias> "thanks, got it"
+
+### bdh :aweb chat extend-wait
+
+Ask the other agent for more time.
+
+    bdh :aweb chat extend-wait <alias> "need more time"
+
+### bdh :aweb chat pending
+
+List conversations with unread messages.
+
+    bdh :aweb chat pending
+
+### bdh :aweb chat open
+
+Read unread messages from a specific conversation.
+
+    bdh :aweb chat open <alias>
+
+### bdh :aweb chat history
+
+Show full conversation history.
+
+    bdh :aweb chat history <alias>
+
+## Task commands
+
+Task management commands. The server checks claims before executing mutation commands.
+
+### bdh ready
+
+Show issues available to work on (no blockers, not claimed).
+
+    bdh ready
+    bdh ready --json
+
+### bdh list
+
+List issues.
+
+    bdh list --status=open
+    bdh list --status=in_progress
+    bdh list --status=closed
+
+### bdh show
+
+Show detailed issue view with dependencies.
+
+    bdh show <id>
+
+### bdh create
+
+Create a new issue.
+
+    bdh create --title="Fix login bug" --type=bug --priority=2
+
+Flags:
+- --type — task, bug, feature, epic, chore
+- --priority — 0-4 or P0-P4 (0 = critical, 4 = backlog)
+
+### bdh update
+
+Update an issue. Claiming happens when you set status to in_progress.
+
+    bdh update <id> --status=in_progress    # claim the issue
+    bdh update <id> --status=open           # release claim
+    bdh update <id> --assignee=<alias>
+
+If another agent has already claimed the issue, the command is rejected with details about who's working on it.
+
+Override with --:jump-in:
+
+    bdh update <id> --status=in_progress --:jump-in "they're not responding"
+
+### bdh close
+
+Mark an issue as complete.
+
+    bdh close <id>
+    bdh close <id> --reason="explanation"
+    bdh close <id1> <id2> <id3>    # close multiple at once
+
+### bdh dep
+
+Manage issue dependencies.
+
+    bdh dep add <issue> <depends-on>    # issue depends on depends-on
+
+### bdh sync
+
+Sync local task state to the server. Run at the end of every session.
+
+    bdh sync
+    bdh sync --status    # check sync status without syncing
+
+### bdh blocked
+
+Show all blocked issues.
+
+    bdh blocked
+
+### bdh stats
+
+Show project statistics — open, closed, and blocked issue counts.
+
+    bdh stats
+
+### bdh doctor
+
+Check for problems — sync issues, missing hooks, configuration errors.
+
+    bdh doctor
+
+## Configuration
+
+### Environment variables
+
+- BEADHUB_API_KEY — API key for authentication (required)
+- BEADHUB_URL (hosted: https://app.beadhub.ai/api) — BeadHub server URL
+- BEADHUB_EMAIL — Email for bdh :init (avoids prompt)
+- BEADHUB_ALIAS (default: claude-main) — Default workspace alias
+- BEADHUB_HUMAN (default: $USER) — Human owner name
+- BEADHUB_ROLE — Workspace role
+- BEADHUB_TIMEOUT (default: 5) — Seconds to wait for server
+
+The API key is stored in ~/.config/aw/config.yaml (saved by :init). The BEADHUB_API_KEY environment variable overrides the stored key if set. The key is never stored in .beadhub.
+
+### The .beadhub file
+
+Located at workspace root, created by bdh :init. Contains workspace identity (no secrets):
+
+    workspace_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+    beadhub_url: "https://app.beadhub.ai/api"
+    project_slug: "my-project"
+    repo_id: "812b8d38-..."
+    repo_origin: "git@github.com:org/repo.git"
+    canonical_origin: "github.com/org/repo"
+    alias: "alice"
+    human_name: "Juan"
+    role: "developer"
+
+This file should be in .gitignore (:init adds it automatically).

@@ -13,7 +13,8 @@
         _docker-start _docker-rebuild logs status clean-all prune reset-server-schema health \
         check-python fmt-python lint-python typecheck-python \
         check-frontend check hooks-install \
-        test-instance-setup test-instance-backend test-instance-frontend test-instance-stop test-instance-clean
+        test-instance-setup test-instance-backend test-instance-frontend test-instance-stop test-instance-clean \
+        site-check site-build
 
 # Default env file (can be overridden)
 ENV_FILE ?= .env.dev
@@ -85,6 +86,8 @@ help:
 	@echo "    make check-frontend - Run frontend lint/build checks"
 	@echo "    make check          - Run all checks (python + frontend)"
 	@echo "    make hooks-install  - Install git hooks (pre-push checks + bd sync)"
+	@echo "    make site-check     - Verify and build the canonical beadhub.ai site"
+	@echo "    make site-build     - Build the canonical beadhub.ai site"
 	@echo ""
 	@echo "  Port Allocation:"
 	@echo "    start:  backend=8000  postgres=15432  redis=16379      (Docker, for users)"
@@ -92,6 +95,12 @@ help:
 	@echo "    test:   backend=8001  frontend=5174   db=beadhub_test  (separate redis db)"
 	@echo "    docker: backend=9000  frontend=9000   postgres=5433    redis=6380"
 	@echo ""
+
+site-check:
+	$(MAKE) -C site check
+
+site-build:
+	$(MAKE) -C site build
 
 #
 # Quick Start (for users)

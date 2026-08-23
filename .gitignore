@@ -156,3 +156,8 @@ llmring-server
 .playwright-mcp/
 .env.beadhub
 .aw/
+
+# Canonical Hugo site build output
+/site/public/
+/site/resources/
+/site/.hugo_build.lock

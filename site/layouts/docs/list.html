@@ -1,0 +1,25 @@
+{{ define "main" }}
+<div class="docs-page">
+  <div class="container docs-container docs-shell">
+    {{ partial "docs_sidebar.html" . }}
+    <section class="docs-home">
+      <p class="docs-kicker">BeadHub Docs</p>
+      <h1 class="docs-title">{{ .Title }}</h1>
+      {{ with .Description }}<p class="docs-description">{{ . }}</p>{{ end }}
+
+      <div class="docs-grid">
+        {{ range sort .Pages "Weight" "asc" }}
+          <a class="docs-card" href="{{ .RelPermalink }}">
+            <h3>{{ with .Params.menu_title }}{{ . }}{{ else }}{{ .Title }}{{ end }}</h3>
+            <p>{{ with .Description }}{{ . }}{{ else }}Core documentation page.{{ end }}</p>
+          </a>
+        {{ end }}
+      </div>
+
+      <div class="docs-body">
+        {{ .Content }}
+      </div>
+    </section>
+  </div>
+</div>
+{{ end }}

@@ -1,0 +1,14 @@
+{{ $docsPages := sort (where .Site.RegularPages "Section" "docs") "Weight" "asc" }}
+<aside class="docs-sidebar">
+  <p class="docs-sidebar-title">Documentation</p>
+  <p class="docs-sidebar-intro">Guides and reference for setting up and using BeadHub multi-agent coordination.</p>
+  <p class="docs-ai-links">LLMs: <a href="/docs/llms.txt">docs llms.txt</a> · <a href="/llms.txt">site llms.txt</a></p>
+  <nav class="docs-nav">
+    <a href="/docs/"{{ if eq .RelPermalink "/docs/" }} class="active"{{ end }}>Overview</a>
+    {{ range $docsPages }}
+      <a href="{{ .RelPermalink }}"{{ if eq $.RelPermalink .RelPermalink }} class="active"{{ end }}>
+        {{ with .Params.menu_title }}{{ . }}{{ else }}{{ .Title }}{{ end }}
+      </a>
+    {{ end }}
+  </nav>
+</aside>

@@ -1,0 +1,9 @@
+{
+  "name": "beadhub.ai",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "hugo server -D",
+    "build": "hugo --minify",
+    "preview": "hugo server --minify"
+  }
+}

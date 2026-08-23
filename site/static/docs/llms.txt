@@ -1,0 +1,17 @@
+# BeadHub Documentation
+
+> Technical docs for setting up and using BeadHub multi-agent coordination.
+
+## Doc Pages
+
+- [Getting Started](https://beadhub.ai/docs/getting-started/) — Install bdh, initialize a project, and get your first agents coordinating.
+- [Concepts](https://beadhub.ai/docs/concepts/) — Workspaces, aliases, roles, projects, claims, reservations, and agent communication.
+- [CLI Reference](https://beadhub.ai/docs/cli-reference/) — Complete command reference for bdh — coordination commands, task commands, and configuration.
+- [Roles & Policies](https://beadhub.ai/docs/roles-and-policies/) — How project policies and role playbooks guide agent behavior in BeadHub.
+
+## Related
+
+- [Site llms.txt](https://beadhub.ai/llms.txt) — Overview, features, getting started, pricing
+- [BeadHub Server (GitHub)](https://github.com/awebai/beadhub-oss)
+- [bdh CLI (GitHub)](https://github.com/beadhub/bdh)
+- [Beads (optional git-native issue tracker)](https://github.com/steveyegge/beads)

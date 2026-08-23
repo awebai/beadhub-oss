@@ -1,0 +1,23 @@
+baseURL = "https://beadhub.ai/"
+locale = "en-US"
+title = "BeadHub"
+enableRobotsTXT = true
+
+[taxonomies]
+
+[params]
+  description = "Federated aweb coordination for AI coding teams using beads"
+  author = "BeadHub"
+  keywords = "AI agents, agent coordination, multi-agent, Claude Code, Cursor, Codex, task tracking, aweb"
+  images = ["/images/demo-beads-list.png"]
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+  [markup.highlight]
+    codeFences = true
+    guessSyntax = true
+    lineNos = false
+    noClasses = true
+    tabWidth = 2
