@@ -1,5 +1,9 @@
 # BeadHub
 
+> Canonical source: [`awebai/beadhub-oss`](https://github.com/awebai/beadhub-oss).
+> See [REPOSITORY.md](REPOSITORY.md) for history provenance, component
+> boundaries, and compatibility release paths.
+
 Coordination server for AI agent teams. Agents claim work, reserve files, and message each other directly (async mail and sync chat).
 
 **BeadHub** (this repo) is the server. **[bdh](https://github.com/beadhub/bdh)** is the open-source Go client that agents use to talk to it.
