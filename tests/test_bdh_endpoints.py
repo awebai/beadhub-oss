@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from datetime import datetime, timezone
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -114,10 +115,31 @@ async def test_bdh_sync_sets_and_clears_claims(db_infra, init_workspace):
                         "issues_jsonl": _jsonl(
                             {"id": "bd-1", "title": "t", "status": "in_progress"}
                         ),
-                        "command_line": "update bd-1 --status in_progress",
+                        "command_line": "update bd-1 --claim",
                     },
                 )
                 assert resp.status_code == 200, resp.text
+
+                # Replaying the successful claim event refreshes the existing
+                # row; it must not create a duplicate claim.
+                replay = await client.post(
+                    "/v1/bdh/sync",
+                    headers=auth_headers(init["api_key"]),
+                    json={
+                        "workspace_id": init["workspace_id"],
+                        "repo_id": init["repo_id"],
+                        "alias": init["alias"],
+                        "human_name": init["human_name"],
+                        "repo_origin": TEST_REPO_ORIGIN,
+                        "role": "agent",
+                        "sync_mode": "full",
+                        "issues_jsonl": _jsonl(
+                            {"id": "bd-1", "title": "t", "status": "in_progress"}
+                        ),
+                        "command_line": "update bd-1 --claim",
+                    },
+                )
+                assert replay.status_code == 200, replay.text
 
                 claims = await client.get("/v1/claims", headers=auth_headers(init["api_key"]))
                 assert claims.status_code == 200
@@ -151,6 +173,110 @@ async def test_bdh_sync_sets_and_clears_claims(db_infra, init_workspace):
     except Exception:
         logger.exception("test_bdh_sync_sets_and_clears_claims failed")
         raise
+    finally:
+        await redis.flushdb()
+        await redis.aclose()
+
+
+@pytest.mark.asyncio
+async def test_bdh_sync_returns_stale_conflicts_as_incomplete(db_infra, init_workspace):
+    """A partial stale upload reports its IDs and never claims convergence."""
+    redis = await Redis.from_url(TEST_REDIS_URL, decode_responses=True)
+    try:
+        await redis.ping()
+    except Exception:
+        pytest.skip("Redis is not available")
+    await redis.flushdb()
+
+    try:
+        app = create_app(db_infra=db_infra, redis=redis, serve_frontend=False)
+        async with LifespanManager(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                init = await init_workspace(
+                    client,
+                    project_slug=f"bdh-{uuid.uuid4().hex[:8]}",
+                    repo_origin=TEST_REPO_ORIGIN,
+                    alias="sync-agent",
+                    human_name="Sync Agent",
+                    role="agent",
+                )
+                old_time = "2025-01-01T10:00:00Z"
+                first = await client.post(
+                    "/v1/bdh/sync",
+                    headers=auth_headers(init["api_key"]),
+                    json={
+                        "workspace_id": init["workspace_id"],
+                        "repo_id": init["repo_id"],
+                        "alias": init["alias"],
+                        "human_name": init["human_name"],
+                        "repo_origin": TEST_REPO_ORIGIN,
+                        "role": "agent",
+                        "sync_mode": "full",
+                        "issues_jsonl": _jsonl(
+                            {
+                                "id": "bd-stale",
+                                "title": "Original",
+                                "status": "open",
+                                "updated_at": old_time,
+                            }
+                        ),
+                    },
+                )
+                assert first.status_code == 200, first.text
+                assert first.json()["synced"] is True
+                assert first.json()["conflicts"] == []
+
+                beads_db = db_infra.get_manager("beads")
+                await beads_db.execute(
+                    """
+                    UPDATE {{tables.beads_issues}}
+                    SET title = 'Newer server title', updated_at = $1
+                    WHERE project_id = $2 AND bead_id = 'bd-stale'
+                    """,
+                    datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc),
+                    uuid.UUID(init["project_id"]),
+                )
+
+                stale = await client.post(
+                    "/v1/bdh/sync",
+                    headers=auth_headers(init["api_key"]),
+                    json={
+                        "workspace_id": init["workspace_id"],
+                        "repo_id": init["repo_id"],
+                        "alias": init["alias"],
+                        "human_name": init["human_name"],
+                        "repo_origin": TEST_REPO_ORIGIN,
+                        "role": "agent",
+                        "sync_mode": "incremental",
+                        "changed_issues": _jsonl(
+                            {
+                                "id": "bd-stale",
+                                "title": "Stale local title",
+                                "status": "closed",
+                                "updated_at": old_time,
+                            }
+                        ),
+                    },
+                )
+                assert stale.status_code == 200, stale.text
+                data = stale.json()
+                assert data["synced"] is False
+                assert data["conflicts"] == ["bd-stale"]
+                assert data["conflicts_count"] == 1
+                assert data["stats"]["received"] == 1
+                assert data["stats"]["updated"] == 0
+
+                row = await beads_db.fetch_one(
+                    """
+                    SELECT title, status FROM {{tables.beads_issues}}
+                    WHERE project_id = $1 AND bead_id = 'bd-stale'
+                    """,
+                    uuid.UUID(init["project_id"]),
+                )
+                assert row["title"] == "Newer server title"
+                assert row["status"] == "open"
     finally:
         await redis.flushdb()
         await redis.aclose()
@@ -261,7 +387,7 @@ async def test_bdh_command_rejects_claim_when_already_claimed(db_infra, init_wor
                         "issues_jsonl": _jsonl(
                             {"id": "bd-1", "title": "Fix bug", "status": "in_progress"}
                         ),
-                        "command_line": "update bd-1 --status in_progress",
+                        "command_line": "update bd-1 --claim",
                     },
                 )
                 assert resp.status_code == 200, resp.text
@@ -410,6 +536,10 @@ async def test_sync_rejects_claim_when_already_claimed_by_another(db_infra, init
 
 
 class TestParseCommandLine:
+    def test_update_claim(self):
+        cmd, bead_id, status = _parse_command_line("update bd-1 --claim")
+        assert (cmd, bead_id, status) == ("update", "bd-1", "in_progress")
+
     def test_update_in_progress(self):
         cmd, bead_id, status = _parse_command_line("update bd-1 --status in_progress")
         assert (cmd, bead_id, status) == ("update", "bd-1", "in_progress")
@@ -417,6 +547,10 @@ class TestParseCommandLine:
     def test_update_with_equals(self):
         cmd, bead_id, status = _parse_command_line("update bd-1 --status=in_progress")
         assert (cmd, bead_id, status) == ("update", "bd-1", "in_progress")
+
+    def test_explicit_status_wins_over_claim(self):
+        cmd, bead_id, status = _parse_command_line("update bd-1 --claim --status open")
+        assert (cmd, bead_id, status) == ("update", "bd-1", "open")
 
     def test_close(self):
         cmd, bead_id, status = _parse_command_line("close bd-42")

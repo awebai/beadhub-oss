@@ -76,7 +76,9 @@ def _parse_command_line(command_line: str) -> tuple[Optional[str], Optional[str]
             bead_id = candidate
 
     if cmd == "update":
-        # Handle: --status in_progress OR --status=in_progress
+        # Explicit status wins if both forms somehow appear. A successful
+        # modern beads `--claim` mutation is equivalent to in_progress.
+        claim_requested = "--claim" in parts
         for i, p in enumerate(parts):
             if p == "--status" and i + 1 < len(parts):
                 status = parts[i + 1].strip()
@@ -84,6 +86,8 @@ def _parse_command_line(command_line: str) -> tuple[Optional[str], Optional[str]
             if p.startswith("--status="):
                 status = p.split("=", 1)[1].strip()
                 break
+        if status is None and claim_requested:
+            status = "in_progress"
 
     return cmd, bead_id, status
 
@@ -465,6 +469,8 @@ class SyncResponse(BaseModel):
     context: CommandContext | None = None
     stats: SyncStats | None = None
     sync_protocol_version: int = 1
+    conflicts: list[str] = Field(default_factory=list)
+    conflicts_count: int = 0
     claim_rejected: bool = False
     claim_rejected_reason: str = ""
 
@@ -711,11 +717,14 @@ async def sync(
     )
     issues_count = int(count_row["c"]) if count_row else 0
 
+    sync_conflicts = sorted(result.conflicts) if result is not None else []
     resp = SyncResponse(
-        synced=True,
+        synced=not sync_conflicts,
         issues_count=issues_count,
         stats=SyncStats(received=received, inserted=inserted, updated=updated, deleted=deleted),
         sync_protocol_version=1,
+        conflicts=sync_conflicts,
+        conflicts_count=len(sync_conflicts),
     )
     if claim_conflict:
         resp.claim_rejected = True
