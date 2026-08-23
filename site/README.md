@@ -23,9 +23,9 @@ it at build time:
 HUGO_PLAUSIBLE_SCRIPT_URL=https://plausible.io/js/pa-REPLACE.js make build
 ```
 
-The URL is public configuration, not a credential. Without it, the site still
-builds and works, but analytics remains disabled. The shared event is
-`BeadHub Activation`; this surface emits only
+The URL is public configuration, not a credential. Missing URLs and values
+outside `https://plausible.io/js/*.js` leave analytics disabled. The site still
+builds and works. The shared event is `BeadHub Activation`; this surface emits only
 `step=visit` and `surface=site`. Plausible's standard pageview supplies
 referrer/campaign attribution without exposing message, task, key, account, or
 repository content.
@@ -41,8 +41,11 @@ prepare a mirror update without relying on GitHub Actions:
    staging directory.
 3. Compare that staging directory with a clean legacy checkout, copy the
    reviewed source delta, and build it with the same Hugo version.
-4. Commit and push the mirror only after its own review. Render remains a
-   separate manual action.
+4. Commit the mirror locally and review it. Before any push, Juan or the
+   deployment operator must confirm whether Render auto-deploy is enabled. If
+   a push could deploy, stop and leave the reviewed commit local until Juan
+   explicitly authorizes the production effect. Never assume a mirror push and
+   the manual Render flip are separate actions.
 
 The import boundary and exact source commit are recorded in
 [`PROVENANCE.md`](PROVENANCE.md).

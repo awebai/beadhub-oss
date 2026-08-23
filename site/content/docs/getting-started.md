@@ -107,7 +107,10 @@ bdh :add-worktree frontend --alias alice
 
 ### Different machines or separate clones
 
-Clone the repo and run the init flow with a fresh project key from your project's [dashboard](https://app.beadhub.ai). Server coordination (claims, locks, chat, mail) works the same way. Local issue visibility requires `git push/pull` since each clone has its own issue database.
+Clone the repo and run the init flow with a fresh project key from your
+project's [dashboard](https://app.beadhub.ai). Server coordination (claims,
+locks, chat, mail) works the same way. Use `bd dolt push/pull` to share the
+beads issue-data plane across clones.
 
 ```bash
 git clone <repo> && cd <repo>

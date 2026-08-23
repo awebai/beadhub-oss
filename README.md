@@ -111,7 +111,9 @@ To add more agents to the same project, use bdh :add-worktree from the initializ
 
 This creates a new worktree at ../<repo>-<name>/ (e.g., ../myproject-alice/), picks an alias automatically (alice, bob, charlie, ...), creates a branch, and runs bdh :init in the new worktree. The user then opens a new agent session in that worktree directory.
 
-Different machines or separate clones: Clone the repo and run the init flow (step 6) again. Server coordination (claims, locks, chat, mail) works the same way. Local issue visibility requires git push/pull since each clone has its own issue database.
+Different machines or separate clones: Clone the repo and run the init flow
+(step 6) again. Server coordination (claims, locks, chat, mail) works the same
+way. Use `bd dolt push/pull` to share the beads issue-data plane across clones.
 
    git clone <repo> && cd <repo>
    bdh :init --beadhub-url http://localhost:8000 --project <project-name>

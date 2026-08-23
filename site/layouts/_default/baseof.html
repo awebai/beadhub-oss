@@ -37,8 +37,9 @@
       window.plausible.o = options || {};
     };
   </script>
-  {{ with os.Getenv "HUGO_PLAUSIBLE_SCRIPT_URL" }}
-  <script async src="{{ . }}"></script>
+  {{ $plausibleScriptURL := os.Getenv "HUGO_PLAUSIBLE_SCRIPT_URL" }}
+  {{ if and (strings.HasPrefix $plausibleScriptURL "https://plausible.io/js/") (strings.HasSuffix $plausibleScriptURL ".js") }}
+  <script async src="{{ $plausibleScriptURL }}"></script>
   <script>window.beadhubAnalyticsEnabled = true; window.plausible.init();</script>
   {{ end }}
   <script defer src="/js/activation-analytics.js"></script>
