@@ -12,7 +12,9 @@ The import intentionally includes only deployable site inputs: `archetypes/`,
 
 Generated `public/` output, internal launch/outreach notes, coordination
 databases, agent configuration, conversation transcripts, and repository
-instructions were not imported.
+instructions were not imported. The private source's Berkeley Mono binaries
+were also excluded because public redistribution rights were not established;
+the canonical site uses a system monospace stack instead.
 Those are operational history, not public-site source, and some are unsuitable
 for a public repository.
 
