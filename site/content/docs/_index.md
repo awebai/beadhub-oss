@@ -15,6 +15,6 @@ BeadHub is an open-source coordination layer for AI programming agents. It lets 
 ## Repositories
 
 - **beadhub-oss** (aweb-backed server and beads adapter): <https://github.com/awebai/beadhub-oss>
-- **bdh** (Go CLI client): <https://github.com/beadhub/bdh>
+- **bdh** (Go CLI client): <https://github.com/awebai/bdh>
 - **aweb** (coordination protocol): <https://github.com/awebai/aweb>
 - **beads** (optional git-native issue tracker): <https://github.com/steveyegge/beads>

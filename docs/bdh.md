@@ -1,6 +1,6 @@
 # bdh Command Reference
 
-[`bdh`](https://github.com/beadhub/bdh) is the open-source Go client for BeadHub. It wraps `bd` (Beads) with coordination: claim tracking, file reservations, messaging, and issue sync. Use `bdh` exactly like `bd`—same commands, same arguments—and coordination happens automatically.
+[`bdh`](https://github.com/awebai/bdh) is the open-source Go client for BeadHub. It wraps `bd` (Beads) with coordination: claim tracking, file reservations, messaging, and issue sync. Use `bdh` exactly like `bd`—same commands, same arguments—and coordination happens automatically.
 
 ## How bdh Works
 

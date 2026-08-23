@@ -15,11 +15,11 @@ This guide covers setting up BeadHub for local development.
 Local development typically uses sibling checkouts:
 
 ```
-beadhub-all/
-  beadhub/      # this repo (beads + repo/workspace context; embeds aweb routes)
+beadhub/
+  beadhub-oss/  # this repo (beads + repo/workspace context; embeds aweb routes)
   aweb/         # aweb protocol server (standalone OSS implementation)
   aw/           # Go client + `aw` CLI (github.com/awebai/aw)
-  bdh/          # BeadHub CLI (github.com/beadhub/bdh)
+  bdh/          # BeadHub CLI (github.com/awebai/bdh)
 ```
 
 Key wiring:
@@ -30,13 +30,13 @@ Key wiring:
 
 ```bash
 # Clone sibling repos (recommended for development)
-mkdir -p beadhub-all && cd beadhub-all
-git clone https://github.com/beadhub/beadhub.git
+mkdir -p beadhub && cd beadhub
+git clone https://github.com/awebai/beadhub-oss.git
 git clone https://github.com/awebai/aweb.git
 git clone https://github.com/awebai/aw.git
-git clone https://github.com/beadhub/bdh.git
+git clone https://github.com/awebai/bdh.git
 
-cd beadhub
+cd beadhub-oss
 
 # Install dependencies
 uv sync

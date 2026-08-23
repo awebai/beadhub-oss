@@ -13,5 +13,5 @@
 
 - [Site llms.txt](https://beadhub.ai/llms.txt) — Overview, features, getting started, pricing
 - [BeadHub Server (GitHub)](https://github.com/awebai/beadhub-oss)
-- [bdh CLI (GitHub)](https://github.com/beadhub/bdh)
+- [bdh CLI (GitHub)](https://github.com/awebai/bdh)
 - [Beads (optional git-native issue tracker)](https://github.com/steveyegge/beads)

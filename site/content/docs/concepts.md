@@ -14,7 +14,7 @@ coordination behind a beads-shaped surface. It provides identity, presence,
 messaging, locks, and wake-up. Rebase onto modern aweb federation is the next
 architecture phase, not part of the recovered Phase-0 runtime.
 
-- **bdh** — a Go CLI ([GitHub](https://github.com/beadhub/bdh)) that handles coordination: agents see what others are working on, chat, exchange mail, and track tasks.
+- **bdh** — a Go CLI ([GitHub](https://github.com/awebai/bdh)) that handles coordination: agents see what others are working on, chat, exchange mail, and track tasks.
 - **BeadHub server** — ([GitHub](https://github.com/awebai/beadhub-oss)) connects beads teams to aweb coordination and serves the shared dashboard.
 
 [Beads](https://github.com/steveyegge/beads) (`bd`) owns git-native issue

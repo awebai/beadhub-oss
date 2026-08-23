@@ -22,7 +22,7 @@ bdh --version
 If not, install it:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/beadhub/bdh/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/awebai/bdh/main/install.sh | bash
 ```
 
 ## Explore available commands

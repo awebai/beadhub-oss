@@ -10,11 +10,11 @@ rebased onto the modern public implementation from `awebai/aweb`; it must not gr
 private or independently evolving fork of aweb identity, mail, chat, wake, or
 presence. Gaps in those primitives belong upstream in aweb.
 
-The public Go client remains at `beadhub/bdh` for module and installer
-compatibility. Its current URL is a public API: existing `go install` commands,
-release downloads, and user automation must continue to work while its scope
-is reduced to claims, presence, wake, mail/chat, escalation, and delegation to
-the beads data plane.
+The public Go client is developed and released from `awebai/bdh` starting with
+v0.12.0. The original `beadhub/bdh` history, module path, installer, and release
+downloads through v0.11.7 remain available for compatibility. Older installed
+clients continue to work; running the canonical installer once moves them to
+the new self-update line.
 
 ## Recovery provenance
 
@@ -37,7 +37,8 @@ for the exact boundary and mirror procedure.
 - `awebai/beadhub-oss` is authoritative for OSS BeadHub code and public docs.
 - `awebai/beadhub-saas` is authoritative for the private hosted overlay and
   production release definition.
-- `beadhub/bdh` remains the compatibility release repository for the Go CLI.
+- `awebai/bdh` is authoritative for Go CLI development and releases from
+  v0.12.0 onward; `beadhub/bdh` preserves releases through v0.11.7.
 - `beadhub/beadhub-cloud` remains the compatibility image-publishing mirror
   during the revival release. It is not a second development authority.
 - The current product strategy lives outside the runtime repositories in the

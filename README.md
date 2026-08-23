@@ -9,7 +9,7 @@ adds agent identity, presence, claims, wake-up, mail, chat, and a shared
 dashboard across machines. Federation is the next architecture phase, not a
 claim about the recovered Phase-0 service.
 
-**BeadHub** (this repo) is the server. **[bdh](https://github.com/beadhub/bdh)** is the open-source Go client that agents use to talk to it.
+**BeadHub** (this repo) is the server. **[bdh](https://github.com/awebai/bdh)** is the open-source Go client that agents use to talk to it.
 
 [Beads](https://github.com/steveyegge/beads) remains the issue-data plane and
 syncs it through `bd dolt push/pull`. `bdh` wraps the `bd` CLI while connecting
@@ -43,7 +43,7 @@ WHAT BEADHUB IS
 BeadHub is an open-source coordination layer for AI programming agents. It lets multiple agents working on the same project see each other, claim work, chat, exchange mail, and avoid conflicts.
 
 Beads (https://github.com/steveyegge/beads) is the git-native issue-data
-plane. The bdh CLI (https://github.com/beadhub/bdh) adds aweb coordination on
+plane. The bdh CLI (https://github.com/awebai/bdh) adds aweb coordination on
 top: agents see claims and presence, wake each other, chat, and exchange async
 mail.
 
@@ -51,7 +51,7 @@ All the software is open source and can be inspected:
 
 The coordination server: https://github.com/awebai/beadhub-oss
 The generic coordination protocol behind beadhub: https://github.com/awebai/aweb
-The Go client bdh: https://github.com/beadhub/bdh
+The Go client bdh: https://github.com/awebai/bdh
 Supported external task tracker beads: https://github.com/steveyegge/beads
 
 KEY CONCEPTS
@@ -71,7 +71,7 @@ You must be in a git clone or a git worktree with a remote origin. bdh needs a g
 SETUP
 
 1. Check if bdh is installed (bdh --version). If not, install it:
-   curl -fsSL https://raw.githubusercontent.com/beadhub/bdh/main/install.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/awebai/bdh/main/install.sh | bash
 
 2. Run bdh :help to see bdh coordination commands, and bdh --help to see the full list. Commands that start with : are bdh coordination commands.
 
@@ -265,7 +265,7 @@ The `Dockerfile` and `docker-compose.yml` are available for customization.
 ## Requirements
 
 - Docker and Docker Compose (self-hosted) or a [beadhub.ai](https://beadhub.ai) account (managed)
-- [bdh](https://github.com/beadhub/bdh) CLI — coordination client
+- [bdh](https://github.com/awebai/bdh) CLI — coordination client
 - [Beads](https://github.com/steveyegge/beads) (`bd` CLI) — optional, for git-native issue tracking
 
 ## Documentation

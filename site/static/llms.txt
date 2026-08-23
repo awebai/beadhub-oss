@@ -11,7 +11,7 @@ view used by its dashboard. Federation is the next architecture phase.
 
 - BeadHub server, beads adapter, dashboard, and site: https://github.com/awebai/beadhub-oss
 - aweb coordination and federation protocol: https://github.com/awebai/aweb
-- bdh Go CLI and releases: https://github.com/beadhub/bdh
+- bdh Go CLI and releases: https://github.com/awebai/bdh
 - beads issue tracker: https://github.com/steveyegge/beads
 
 ## Hosted activation
@@ -20,7 +20,7 @@ You must start from a git clone or worktree with an origin remote.
 
 1. Install `bdh` if it is not already available:
 
-       curl -fsSL https://raw.githubusercontent.com/beadhub/bdh/main/install.sh | bash
+       curl -fsSL https://raw.githubusercontent.com/awebai/bdh/main/install.sh | bash
 
 2. Register at https://app.beadhub.ai/register and create or select a project.
 3. Choose **Generate setup command** in the dashboard.

@@ -10,7 +10,7 @@ directory that is not a git workspace.
 ## Install bdh
 
     bdh --version
-    curl -fsSL https://raw.githubusercontent.com/beadhub/bdh/main/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/awebai/bdh/main/install.sh | bash
 
 ## Initialize from the dashboard
 

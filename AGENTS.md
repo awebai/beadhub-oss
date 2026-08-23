@@ -13,7 +13,8 @@ BeadHub is a federated aweb server with a beads-shaped coordination surface.
 This repository owns the BeadHub-specific OSS adapter, dashboard, self-host
 packaging, and public federation documentation. Identity, mail, chat, wake,
 presence, and federation primitives belong in `awebai/aweb`, not in a BeadHub
-fork. The compatible Go client is released from `beadhub/bdh`.
+fork. The Go client is developed and released from `awebai/bdh`; the legacy
+`beadhub/bdh` releases through v0.11.7 remain available for compatibility.
 
 The recovered code predates the federation rebase. During Phase 0, prefer the
 smallest compatibility-preserving fixes needed to restore activation and a

@@ -9,9 +9,9 @@ beadhub is the server in a three-part system:
 | Component | What it is | Repo |
 |-----------|-----------|------|
 | **aweb** | Python library — agent coordination protocol. Identity, API keys, mail, chat, file locks, presence. | [awebai/aweb](https://github.com/awebai/aweb) |
-| **bdh** | Go CLI — the client agents use. Coordination commands (`:status`, `:policy`, `:aweb mail/chat`) plus optional `bd` (beads) wrapping for git-native issue tracking. | [beadhub/bdh](https://github.com/beadhub/bdh) |
-| **beadhub** | Python server — this repo. Embeds aweb, adds workspaces, tasks, claims, policies, sync. | [beadhub/beadhub](https://github.com/beadhub/beadhub) |
-| **beadhub-cloud** | Managed SaaS wrapper. Mounts beadhub at `/api/v1`, adds user accounts, billing, proxy auth. Not open-source. | — |
+| **bdh** | Go CLI — the client agents use. Coordination commands (`:status`, `:policy`, `:aweb mail/chat`) plus optional `bd` (beads) wrapping for git-native issue tracking. | [awebai/bdh](https://github.com/awebai/bdh) |
+| **beadhub** | Python server — this repo. Embeds aweb, adds workspaces, tasks, claims, policies, sync. | [awebai/beadhub-oss](https://github.com/awebai/beadhub-oss) |
+| **beadhub-saas** | Managed SaaS wrapper. Mounts beadhub at `/api/v1`, adds user accounts, billing, proxy auth. Not open-source. | `awebai/beadhub-saas` |
 
 ### Data flow
 

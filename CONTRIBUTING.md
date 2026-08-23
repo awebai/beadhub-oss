@@ -12,8 +12,8 @@ Prereqs:
 
 Clone and set up:
 ```bash
-git clone https://github.com/beadhub/beadhub.git
-cd beadhub
+git clone https://github.com/awebai/beadhub-oss.git
+cd beadhub-oss
 uv sync
 pnpm -C frontend install   # skip if backend-only
 make hooks-install
@@ -76,7 +76,7 @@ Install `bd` and `bdh` if you don't have them:
 
 ```bash
 brew install beads
-curl -fsSL https://raw.githubusercontent.com/beadhub/bdh/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/awebai/bdh/main/install.sh | bash
 ```
 
 Get your API key from the [dashboard](https://app.beadhub.ai/juanre/beadhub), then from your fork's clone:

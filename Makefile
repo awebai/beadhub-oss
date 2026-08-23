@@ -118,7 +118,7 @@ _start:
 	@echo ""
 	@echo "Next steps:"
 	@echo "  1. Install beads: brew install beads"
-	@echo "  2. Install bdh:   curl -fsSL https://raw.githubusercontent.com/beadhub/bdh/main/install.sh | bash"
+	@echo "  2. Install bdh:   curl -fsSL https://raw.githubusercontent.com/awebai/bdh/main/install.sh | bash"
 	@echo "  3. In your repo:  export BEADHUB_URL=http://localhost:$(BEADHUB_PORT)"
 	@echo "  4. In your repo:  bdh :init --project demo"
 	@echo ""
