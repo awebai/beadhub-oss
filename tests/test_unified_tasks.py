@@ -146,6 +146,11 @@ async def test_tasks_list_searches_and_paginates_large_project(db_infra):
                     ],
                 )
 
+                legacy = await client.get("/v1/tasks", headers=headers)
+                assert legacy.status_code == 200, legacy.text
+                assert len(legacy.json()["tasks"]) == 205
+                assert "has_more" not in legacy.json()
+
                 seen: list[str] = []
                 cursor = None
                 page_count = 0

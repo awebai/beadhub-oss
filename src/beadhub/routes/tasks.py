@@ -241,6 +241,13 @@ async def list_tasks_unified(
         ]
 
     merged.sort(key=_task_order_key)
+    # Existing CLI consumers predate cursor fields and call this endpoint once
+    # to compute list/stats over the complete project. Keep that wire contract
+    # until those clients can advance cursors; the dashboard always supplies
+    # limit (and q when searching), so its production path remains bounded.
+    if q is None and limit is None and cursor is None:
+        return {"tasks": merged}
+
     scope = _task_query_scope(
         project_id=project_id,
         status=status,
