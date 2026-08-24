@@ -190,6 +190,8 @@ async def upsert_claim(
 ) -> ClaimUpsertResult:
     """Attempt to claim a bead and distinguish creation from replay."""
     server_db = db_infra.get_manager("server")
+    project_uuid = UUID(project_id)
+    workspace_uuid = UUID(workspace_id)
 
     # Resolve apex (root parent) for this bead
     apex_bead_id, apex_repo_name, apex_branch = await resolve_claim_apex(
@@ -205,7 +207,7 @@ async def upsert_claim(
         # claims and cannot weaken exclusivity.
         await tx.execute(
             "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
-            f"{project_id}\x1f{bead_id}",
+            f"{project_uuid}\x1f{bead_id}",
         )
 
         # Check if another workspace already holds this claim.
@@ -215,9 +217,9 @@ async def upsert_claim(
             FROM {{tables.bead_claims}}
             WHERE project_id = $1 AND bead_id = $2 AND workspace_id != $3
             """,
-            UUID(project_id),
+            project_uuid,
             bead_id,
-            UUID(workspace_id),
+            workspace_uuid,
         )
         if existing:
             return ClaimUpsertResult(
@@ -245,8 +247,8 @@ async def upsert_claim(
                 apex_branch = EXCLUDED.apex_branch
             RETURNING (xmax = 0) AS created
             """,
-            UUID(project_id),
-            UUID(workspace_id),
+            project_uuid,
+            workspace_uuid,
             alias,
             human_name,
             bead_id,
@@ -271,8 +273,8 @@ async def upsert_claim(
             apex_bead_id,
             apex_repo_name,
             apex_branch,
-            UUID(project_id),
-            UUID(workspace_id),
+            project_uuid,
+            workspace_uuid,
         )
 
     return ClaimUpsertResult(created=bool(row and row["created"]))

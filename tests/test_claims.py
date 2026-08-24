@@ -129,38 +129,69 @@ async def test_concurrent_claim_attempts_have_exactly_one_owner(db_infra):
                 first = await init_project(client, project_slug=project_slug, alias="alice")
                 second = await init_project(client, project_slug=project_slug, alias="bob")
 
-                results = await asyncio.gather(
-                    upsert_claim(
-                        db_infra,
-                        project_id=first["project_id"],
-                        workspace_id=first["workspace_id"],
-                        alias="alice",
-                        human_name="Alice",
-                        bead_id="race-1",
-                    ),
-                    upsert_claim(
-                        db_infra,
-                        project_id=second["project_id"],
-                        workspace_id=second["workspace_id"],
-                        alias="bob",
-                        human_name="Bob",
-                        bead_id="race-1",
-                    ),
-                )
+                attempts = [
+                    {
+                        "workspace_id": first["workspace_id"],
+                        "alias": "alice",
+                        "human_name": "Alice",
+                    },
+                    {
+                        "workspace_id": second["workspace_id"],
+                        "alias": "bob",
+                        "human_name": "Bob",
+                    },
+                ]
+                server_db = db_infra.get_manager("server")
+                project_uuid = uuid.UUID(first["project_id"])
+                lock_key = f"{project_uuid}\x1frace-1"
+
+                # Hold the exact claim lock first. The fixed implementation
+                # must block both attempts here; the former check-then-insert
+                # implementation ignores it and completes, making this a
+                # regression for the locking behavior rather than scheduler
+                # luck around asyncio.gather.
+                async with server_db.transaction() as blocker:
+                    await blocker.execute(
+                        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+                        lock_key,
+                    )
+                    tasks = [
+                        asyncio.create_task(
+                            upsert_claim(
+                                db_infra,
+                                project_id=str(project_uuid).upper(),
+                                workspace_id=attempt["workspace_id"],
+                                alias=attempt["alias"],
+                                human_name=attempt["human_name"],
+                                bead_id="race-1",
+                            )
+                        )
+                        for attempt in attempts
+                    ]
+                    done, _ = await asyncio.wait(tasks, timeout=0.2)
+                    assert not done, "claim attempts did not wait on the project/bead lock"
+
+                results = await asyncio.gather(*tasks)
+
+                winner_index = next(i for i, result in enumerate(results) if result.created)
+                loser_index = 1 - winner_index
+                winner_workspace_id = attempts[winner_index]["workspace_id"]
+                loser = results[loser_index]
 
                 assert sum(result.created for result in results) == 1
                 assert sum(result.conflict is not None for result in results) == 1
+                assert loser.conflict is not None
+                assert loser.conflict["workspace_id"] == winner_workspace_id
 
-                server_db = db_infra.get_manager("server")
                 rows = await server_db.fetch_all(
                     """
                     SELECT workspace_id FROM {{tables.bead_claims}}
                     WHERE project_id = $1 AND bead_id = $2
                     """,
-                    uuid.UUID(first["project_id"]),
+                    project_uuid,
                     "race-1",
                 )
-                assert len(rows) == 1
+                assert [str(row["workspace_id"]) for row in rows] == [winner_workspace_id]
     finally:
         await redis.flushdb()
         await redis.aclose()
