@@ -683,7 +683,8 @@ Unlimited projects
 Private & public repos
 </li>
 </ul>
-<a href="https://app.beadhub.ai/register?tier=pro" class="btn btn-primary">Get Started</a>
+<a href="https://app.beadhub.ai/register?tier=free" class="btn btn-primary">Start Free</a>
+<p class="pricing-subtext">Paid signup is temporarily paused</p>
 </div>
 
 <div class="pricing-card">
@@ -722,7 +723,8 @@ Unlimited team members
 Private & public repos
 </li>
 </ul>
-<a href="https://app.beadhub.ai/register?tier=business" class="btn btn-outline">Get Started</a>
+<a href="https://app.beadhub.ai/register?tier=free" class="btn btn-outline">Start Free</a>
+<p class="pricing-subtext">Paid signup is temporarily paused</p>
 </div>
 </div>
 </div>

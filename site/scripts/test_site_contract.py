@@ -3,7 +3,6 @@
 
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -37,6 +36,12 @@ def main() -> None:
         "https://raw.githubusercontent.com/juanre/",
     ):
         assert forbidden not in activation_surfaces
+    for forbidden in (
+        "register?tier=pro",
+        "register?tier=business",
+    ):
+        assert forbidden not in home
+    assert home.count("Paid signup is temporarily paused") == 2
     assert "7b1f291539c0230106db2a339372a85d9c410896" in provenance
 
     print("site contract: ok")
