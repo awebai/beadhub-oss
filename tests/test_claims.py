@@ -1,5 +1,6 @@
 """Tests for /v1/claims endpoint."""
 
+import asyncio
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -9,6 +10,7 @@ from httpx import ASGITransport, AsyncClient
 from redis.asyncio import Redis
 
 from beadhub.api import create_app
+from beadhub.claims import upsert_claim
 
 TEST_REDIS_URL = "redis://localhost:6379/15"
 TEST_REPO_ORIGIN = "git@github.com:anthropic/beadhub.git"
@@ -102,6 +104,63 @@ async def test_claims_returns_empty_list_initially(db_infra):
                 resp = await client.get("/v1/claims", headers=auth_headers(init["api_key"]))
                 assert resp.status_code == 200
                 assert resp.json()["claims"] == []
+    finally:
+        await redis.flushdb()
+        await redis.aclose()
+
+
+@pytest.mark.asyncio
+async def test_concurrent_claim_attempts_have_exactly_one_owner(db_infra):
+    """Two ordinary claims racing for one bead must not both succeed."""
+    redis = await Redis.from_url(TEST_REDIS_URL, decode_responses=True)
+    try:
+        await redis.ping()
+    except Exception:
+        pytest.skip("Redis is not available")
+    await redis.flushdb()
+
+    try:
+        app = create_app(db_infra=db_infra, redis=redis, serve_frontend=False)
+        async with LifespanManager(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                project_slug = f"claim-race-{uuid.uuid4().hex[:8]}"
+                first = await init_project(client, project_slug=project_slug, alias="alice")
+                second = await init_project(client, project_slug=project_slug, alias="bob")
+
+                results = await asyncio.gather(
+                    upsert_claim(
+                        db_infra,
+                        project_id=first["project_id"],
+                        workspace_id=first["workspace_id"],
+                        alias="alice",
+                        human_name="Alice",
+                        bead_id="race-1",
+                    ),
+                    upsert_claim(
+                        db_infra,
+                        project_id=second["project_id"],
+                        workspace_id=second["workspace_id"],
+                        alias="bob",
+                        human_name="Bob",
+                        bead_id="race-1",
+                    ),
+                )
+
+                assert sum(result.created for result in results) == 1
+                assert sum(result.conflict is not None for result in results) == 1
+
+                server_db = db_infra.get_manager("server")
+                rows = await server_db.fetch_all(
+                    """
+                    SELECT workspace_id FROM {{tables.bead_claims}}
+                    WHERE project_id = $1 AND bead_id = $2
+                    """,
+                    uuid.UUID(first["project_id"]),
+                    "race-1",
+                )
+                assert len(rows) == 1
     finally:
         await redis.flushdb()
         await redis.aclose()

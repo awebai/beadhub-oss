@@ -197,6 +197,17 @@ async def upsert_claim(
     )
 
     async with server_db.transaction() as tx:
+        # Serialize ordinary claim attempts for this project/bead before the
+        # conflict check. Without a transaction-scoped lock, two transactions
+        # can both observe no owner and insert different workspace rows.
+        # hashtextextended returns a stable signed bigint suitable for a
+        # PostgreSQL advisory lock; a collision only serializes unrelated
+        # claims and cannot weaken exclusivity.
+        await tx.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+            f"{project_id}\x1f{bead_id}",
+        )
+
         # Check if another workspace already holds this claim.
         existing = await tx.fetch_one(
             """
