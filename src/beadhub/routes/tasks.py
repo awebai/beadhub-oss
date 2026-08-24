@@ -8,6 +8,7 @@ by the aweb tasks router directly.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from typing import Any, Optional
@@ -24,10 +25,24 @@ from aweb.tasks_service import (
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from ..db import DatabaseInfra, get_db_infra
+from ..pagination import encode_cursor, validate_pagination_params
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/tasks", tags=["tasks"])
+
+
+def _task_order_key(task: dict[str, Any]) -> tuple[int, int, str]:
+    """Keep native task-number order, followed by deterministic legacy refs."""
+    task_number = task.get("task_number")
+    if isinstance(task_number, int):
+        return (0, task_number, str(task["task_ref"]))
+    return (1, 0, str(task["task_ref"]))
+
+
+def _task_query_scope(**filters: Any) -> str:
+    normalized = json.dumps(filters, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def _extract_parent_ref(parent_id: Any) -> str | None:
@@ -178,6 +193,9 @@ async def list_tasks_unified(
     task_type: Optional[str] = Query(None),
     priority: Optional[int] = Query(None, ge=0, le=4),
     labels: Optional[str] = Query(None),
+    q: Optional[str] = Query(None, max_length=200),
+    limit: Optional[int] = Query(None, ge=1, le=200),
+    cursor: Optional[str] = Query(None),
     db_infra: DatabaseInfra = Depends(get_db_infra),
 ) -> dict[str, Any]:
     project_id = await get_project_from_auth(request, db_infra, manager_name="aweb")
@@ -213,7 +231,63 @@ async def list_tasks_unified(
         if bt["task_ref"] not in native_refs:
             merged.append(bt)
 
-    return {"tasks": merged}
+    needle = q.strip().casefold() if q else ""
+    if needle:
+        merged = [
+            task
+            for task in merged
+            if needle in str(task.get("title", "")).casefold()
+            or needle in str(task.get("task_ref", "")).casefold()
+        ]
+
+    merged.sort(key=_task_order_key)
+    scope = _task_query_scope(
+        project_id=project_id,
+        status=status,
+        assignee_agent_id=assignee_agent_id,
+        task_type=task_type,
+        priority=priority,
+        labels=label_list,
+        q=needle,
+    )
+    try:
+        validated_limit, cursor_data = validate_pagination_params(limit, cursor)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    if cursor_data is not None:
+        if (
+            cursor_data.get("v") != 1
+            or cursor_data.get("scope") != scope
+            or not isinstance(cursor_data.get("kind"), int)
+            or not isinstance(cursor_data.get("number"), int)
+            or not isinstance(cursor_data.get("task_ref"), str)
+        ):
+            raise HTTPException(status_code=422, detail="Invalid task pagination cursor")
+        cursor_key = (
+            cursor_data["kind"],
+            cursor_data["number"],
+            cursor_data["task_ref"],
+        )
+        merged = [task for task in merged if _task_order_key(task) > cursor_key]
+
+    page = merged[: validated_limit + 1]
+    has_more = len(page) > validated_limit
+    page = page[:validated_limit]
+    next_cursor = None
+    if has_more and page:
+        kind, number, task_ref = _task_order_key(page[-1])
+        next_cursor = encode_cursor(
+            {
+                "v": 1,
+                "scope": scope,
+                "kind": kind,
+                "number": number,
+                "task_ref": task_ref,
+            }
+        )
+
+    return {"tasks": page, "has_more": has_more, "next_cursor": next_cursor}
 
 
 @router.get("/ready")

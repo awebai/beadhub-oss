@@ -114,6 +114,86 @@ async def test_tasks_list_includes_beads_issues(db_infra):
 
 
 @pytest.mark.asyncio
+async def test_tasks_list_searches_and_paginates_large_project(db_infra):
+    """Large task lists are bounded, complete across cursors, and searchable."""
+    redis = await Redis.from_url(TEST_REDIS_URL, decode_responses=True)
+    try:
+        try:
+            await redis.ping()
+        except Exception:
+            pytest.skip("Redis is not available")
+        await redis.flushdb()
+        app = create_app(db_infra=db_infra, redis=redis, serve_frontend=False)
+        async with LifespanManager(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                setup = await _setup_project(client)
+                headers = {"Authorization": f"Bearer {setup['api_key']}"}
+                await _upload_beads_issues(
+                    client,
+                    setup["api_key"],
+                    [
+                        {
+                            "id": f"bulk-{index:03d}",
+                            "title": f"Bulk task {index:03d}",
+                            "status": "open",
+                            "priority": index % 5,
+                            "issue_type": "task",
+                            "created_by": "pagination-test",
+                        }
+                        for index in range(205)
+                    ],
+                )
+
+                seen: list[str] = []
+                cursor = None
+                page_count = 0
+                while True:
+                    params: dict[str, str | int] = {"limit": 50}
+                    if cursor is not None:
+                        params["cursor"] = cursor
+                    response = await client.get("/v1/tasks", params=params, headers=headers)
+                    assert response.status_code == 200, response.text
+                    data = response.json()
+                    page_count += 1
+                    assert len(data["tasks"]) <= 50
+                    seen.extend(task["task_ref"] for task in data["tasks"])
+                    if not data["has_more"]:
+                        assert data["next_cursor"] is None
+                        break
+                    cursor = data["next_cursor"]
+                    assert cursor
+
+                assert page_count == 5
+                assert seen == [f"bulk-{index:03d}" for index in range(205)]
+                assert len(seen) == len(set(seen))
+
+                miss = await client.get(
+                    "/v1/tasks",
+                    params={"q": "guaranteed-no-such-task-9e6a", "limit": 50},
+                    headers=headers,
+                )
+                assert miss.status_code == 200, miss.text
+                assert miss.json() == {"tasks": [], "has_more": False, "next_cursor": None}
+
+                hit = await client.get(
+                    "/v1/tasks",
+                    params={"q": "bulk task 137", "limit": 50},
+                    headers=headers,
+                )
+                assert hit.status_code == 200, hit.text
+                assert [task["task_ref"] for task in hit.json()["tasks"]] == ["bulk-137"]
+
+                oversized = await client.get(
+                    "/v1/tasks", params={"limit": 201}, headers=headers
+                )
+                assert oversized.status_code == 422
+    finally:
+        await redis.aclose()
+
+
+@pytest.mark.asyncio
 async def test_tasks_detail_falls_back_to_beads(db_infra):
     """GET /v1/tasks/{ref} returns beads issue when no native task matches."""
     redis = await Redis.from_url(TEST_REDIS_URL, decode_responses=True)
