@@ -37,7 +37,7 @@ check-hugo:
 check-contract:
 	python3 scripts/test_site_contract.py
 
-check: check-contract build
+check: build check-contract
 
 dev: check-hugo
 	hugo server --port $(SITE_PORT) --bind 127.0.0.1

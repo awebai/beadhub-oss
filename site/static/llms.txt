@@ -43,3 +43,5 @@ flow. Server coordination works across machines; local beads visibility uses
 - Documentation: https://beadhub.ai/docs/
 - Dashboard: https://app.beadhub.ai/
 - Privacy: https://beadhub.ai/privacy/
+- Terms: https://beadhub.ai/terms/
+- Legal document history: https://beadhub.ai/legal-history/

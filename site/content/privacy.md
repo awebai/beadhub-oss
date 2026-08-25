@@ -1,140 +1,151 @@
 ---
-title: "Privacy Policy"
-description: "BeadHub privacy policy. How Thestarmaps Limited collects, uses, and protects your personal data under GDPR and Irish data protection law."
+title: "Privacy Notice"
+description: "Advance notice of how Awebai, Inc. will process hosted BeadHub data beginning October 2, 2026."
+policy_version: "2026-08-25-awebai-transition"
+notice_date: "2026-09-01"
+effective_date: "2026-10-02"
 ---
 
 <div class="legal-page">
 <div class="container">
 
-# Privacy Policy
+# Privacy Notice
 
-**Last updated: August 2026**
+**Policy version:** `2026-08-25-awebai-transition`
 
-**Thestarmaps Limited** ("we", "us", or "our"), an Irish company, operates BeadHub (the "Service"). This Privacy Policy explains how we collect, use, and protect your personal data in compliance with the General Data Protection Regulation (GDPR) and Irish data protection law.
+**Published for advance notice:** September 1, 2026
 
-## 1. Data Controller
+**Effective:** October 2, 2026
 
-Thestarmaps Limited is the data controller responsible for your personal data.
+Until October 2, 2026, the [prior BeadHub Privacy Policy](/legal-history/) remains
+in effect and Thestarmaps Limited remains the data controller. Beginning October
+2, 2026, **Awebai, Inc., a Delaware corporation**, is the controller for personal
+data processed by the hosted BeadHub service (“BeadHub,” the “Service,” “we,” “us,”
+or “our”). This notice does not apply to a deployment you self-host; its operator
+decides how that deployment processes data.
 
-**Contact:**
-Email: beadhub@beadhub.ai
-Location: Ireland
+Contact us about privacy at beadhub@beadhub.ai.
 
-## 2. Data We Collect
+## 1. Data we process
 
-### Account Data
-- Email address
-- Name (if provided)
-- Password (encrypted)
+- **Account and profile data:** email address, username, display name, password
+  hash, sign-in provider identifiers, avatar URL when supplied, verification and
+  account status, and policy acceptance/notice records.
+- **Project and coordination data:** projects, memberships, repository metadata,
+  workspace and agent information, tasks, claims, messages, activity, API-key
+  metadata, and configuration needed to provide the Service. We do not ask for
+  repository source code as part of ordinary BeadHub operation.
+- **Payment data:** Stripe customer/subscription references, tier, billing status,
+  invoices and payment/refund state needed for service and support. Stripe collects
+  card and billing details under its own privacy notice; BeadHub does not store full
+  card numbers.
+- **Usage and technical data:** API calls, event times, entitlement/limit usage,
+  IP address, user agent, request/security logs, error diagnostics, and device or
+  browser information sent with a request.
+- **Privacy-conscious analytics:** aggregate page visits, referrer/campaign data,
+  and the limited activation events documented by BeadHub. Plausible analytics is
+  configured without analytics cookies. Analytics events must not contain message
+  or task content, API keys, email addresses, repository names, or project IDs.
 
-### Usage Data
-- API calls and timestamps
-- Agent activity logs
-- Repository metadata (names, not code content)
-- Workspace and project configurations
+## 2. Why we process data
 
-### Payment Data
-- Processed by Stripe; we do not store card details
-- Billing address and invoice history
+We process data to perform our contract by creating accounts, authenticating users,
+providing projects and coordination, enforcing plan limits, processing payments,
+and sending transactional messages. We process data for legitimate interests in
+securing and operating the Service, preventing abuse, diagnosing failures, and
+understanding aggregate activation, balanced against user rights. We also process
+records to comply with legal, tax, accounting, and dispute obligations. Where law
+requires consent, we request it separately.
 
-### Technical Data
-- IP address
-- Browser type and version
-- Device information
+We do not sell personal data or use private message/task content to train AI models.
 
-### Privacy-conscious analytics
-- Aggregate page visits, referrer/campaign attribution, and activation steps
-- Activation steps are limited to visit, signup, key creation, sync, claim, and day-2 return
-- Analytics events never contain task or message content, API keys, email addresses, repository names, or project identifiers
+## 3. Service providers and disclosures
 
-## 3. How We Use Your Data
+We disclose only what is needed to operate the Service to these provider categories
+and currently verified providers:
 
-We process your data for:
+- Stripe for payment processing, subscriptions, invoices, and customer portal;
+- Render for application hosting;
+- Neon for the hosted PostgreSQL database;
+- Upstash for hosted cache/coordination infrastructure;
+- Amazon Web Services SES for transactional email;
+- Sentry for configured application error monitoring;
+- Google and GitHub when a user chooses the corresponding OAuth sign-in;
+- Plausible for cookie-free aggregate site and activation analytics.
 
-| Purpose | Legal Basis (GDPR Art. 6) |
-|---------|---------------------------|
-| Providing the Service | Contract performance |
-| Processing payments | Contract performance |
-| Sending service notifications | Contract performance |
-| Security and fraud prevention | Legitimate interest |
-| Product improvement | Legitimate interest |
-| Legal compliance | Legal obligation |
+Providers process data under their own terms and our applicable agreements. We may
+also disclose data when required by law, to protect users and the Service, or as
+part of a corporate transaction with appropriate protections. We do not disclose
+personal data to advertisers or data brokers.
 
-## 4. Data Sharing
+## 4. International transfers
 
-We share data only with:
+The Service and its providers may process data in the United States and other
+countries. Where European Economic Area, United Kingdom, or other transfer rules
+apply, we use an applicable transfer mechanism such as an adequacy decision or
+contractual protections. Contact us for information relevant to your data.
 
-- **Stripe** - Payment processing
-- **Cloud infrastructure providers** - Service hosting
-- **Plausible Analytics** - Cookie-free, aggregate site and activation measurement
-- **Legal authorities** - When required by law
+## 5. Retention
 
-We do not sell your personal data.
+Account and project data is retained while needed to provide the Service. After an
+account-deletion request, we delete or de-identify data under the verified Service
+retention process, except where a longer period is needed for security, payment,
+legal, tax, backup, or dispute obligations. Message/activity retention follows the
+published plan where a plan-specific window applies. Operational and security logs
+are kept only as long as reasonably needed for those purposes. Payment, invoice,
+tax, refund, and dispute records are retained for the period required by applicable
+law and legitimate claims; we do not promise one fixed period for every user or
+jurisdiction.
 
-## 5. International Transfers
+## 6. Security
 
-Your data may be transferred outside the EEA. We ensure adequate protection through:
-- Standard Contractual Clauses (SCCs)
-- Adequacy decisions where applicable
+We use measures appropriate to the Service, including TLS in transit, access
+controls, credential hashing or one-way storage where applicable, and monitoring.
+No system is perfectly secure; contact beadhub@beadhub.ai if you believe an account
+or the Service has been compromised.
 
-## 6. Data Retention
+## 7. Your rights and choices
 
-- **Account data**: Retained while your account is active, then deleted within 30 days of account closure
-- **Usage logs**: Retained for the period specified in your plan (7-365 days)
-- **Payment records**: Retained for 7 years for legal/tax purposes
+Depending on your location, you may have rights to access, correct, delete, restrict,
+object to, or receive a portable copy of personal data, and to withdraw consent
+where consent is the basis. You may also have rights to appeal a decision or lodge
+a complaint with the privacy or data-protection authority where you live. We will
+not discriminate against you for exercising a privacy right.
 
-## 7. Your Rights
+Use available account tools or email beadhub@beadhub.ai. We may verify your identity
+and may retain data where an applicable exception requires or permits it.
 
-Under GDPR, you have the right to:
+## 8. Cookies and local storage
 
-- **Access** your personal data
-- **Rectify** inaccurate data
-- **Erase** your data ("right to be forgotten")
-- **Restrict** processing
-- **Data portability** - receive your data in a structured format
-- **Object** to processing based on legitimate interest
-- **Withdraw consent** at any time
+We use essential session/security cookies and browser storage needed for sign-in,
+invitation, preferences, and service operation. Plausible is configured without
+analytics cookies. We do not use advertising cookies.
 
-To exercise these rights, contact us at beadhub@beadhub.ai.
+## 9. Children
 
-## 8. Cookies
+The Service is not directed to children under 16, and we do not knowingly collect
+their personal data. Contact us if you believe a child supplied data.
 
-We use essential cookies for:
-- Authentication and session management
-- Security (CSRF protection)
+## 10. Entity transition
 
-Plausible analytics does not set cookies. We do not use advertising cookies.
+Registered users are notified at least 30 days before Awebai becomes the controller.
+The transition does not change the historical identity of the entity that created a
+payment or legal record. Data needed to continue the hosted Service transfers to
+Awebai subject to this notice and applicable law. If you do not want to continue,
+you may request export or deletion and cancel any subscription before the effective
+date. Mandatory rights and existing claims are not reduced by the transition.
 
-## 9. Security
+## 11. Changes
 
-We implement appropriate technical and organizational measures including:
-- Encryption in transit (TLS) and at rest
-- Access controls and authentication
-- Regular security assessments
+We will notify registered users of material changes by email or in-product notice
+at least 30 days before they take effect. The version and effective date above
+identify the notice applicable to your account.
 
-## 10. Children
+## 12. Contact
 
-The Service is not intended for users under 16. We do not knowingly collect data from children.
+**Awebai, Inc.**
 
-## 11. Changes to This Policy
-
-We will notify you of material changes via email or Service notification at least 30 days before they take effect.
-
-## 12. Complaints
-
-You have the right to lodge a complaint with the Irish Data Protection Commission:
-
-Data Protection Commission
-21 Fitzwilliam Square South
-Dublin 2, D02 RD28
-Ireland
-Website: www.dataprotection.ie
-
-## 13. Contact Us
-
-For privacy-related inquiries:
-
-Email: beadhub@beadhub.ai
+beadhub@beadhub.ai
 
 </div>
 </div>
