@@ -38,7 +38,13 @@ from beadhub.beads_sync import (
     is_valid_human_name,
     validate_issues_from_list,
 )
-from beadhub.claims import fetch_workspace_aliases, release_bead_claims, upsert_claim
+from beadhub.claims import (
+    fetch_claimed_bead_ids,
+    fetch_workspace_aliases,
+    release_bead_claims,
+    resolve_bead_id,
+    upsert_claim,
+)
 from beadhub.routes.repos import canonicalize_git_url, extract_repo_name
 
 from ..db import DatabaseInfra, get_db_infra
@@ -61,19 +67,27 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _parse_command_line(command_line: str) -> tuple[Optional[str], Optional[str], Optional[str]]:
-    """Return (command, bead_id, status) best-effort, or (None, None, None)."""
+def _parse_command_line(command_line: str) -> tuple[Optional[str], list[str], Optional[str]]:
+    """Return (command, bead_ids, status) best-effort, or (None, [], None).
+
+    bead_ids are the ids exactly as typed, which may be short or partial forms
+    that bd resolved (`resolve_bead_id` resolves them the same way): the
+    tokens right after the command, up to the first flag. bdh joins bd's arguments with spaces, so a quoted
+    flag value arrives as several tokens; stopping at the first flag keeps
+    those words out of the ids.
+    """
 
     parts = command_line.split()
     if not parts:
-        return None, None, None
+        return None, [], None
     cmd = parts[0].strip()
-    bead_id: Optional[str] = None
+    bead_ids: list[str] = []
     status: Optional[str] = None
-    if cmd in ("update", "close", "delete", "reopen") and len(parts) >= 2:
-        candidate = parts[1].strip()
-        if not candidate.startswith("--"):
-            bead_id = candidate
+    if cmd in ("update", "close", "delete", "reopen"):
+        for part in parts[1:]:
+            if part.startswith("-"):
+                break
+            bead_ids.append(part)
 
     if cmd == "update":
         # Explicit status wins if both forms somehow appear. A successful
@@ -89,7 +103,27 @@ def _parse_command_line(command_line: str) -> tuple[Optional[str], Optional[str]
         if status is None and claim_requested:
             status = "in_progress"
 
-    return cmd, bead_id, status
+    return cmd, bead_ids, status
+
+
+async def _resolve_bead_ids(
+    db_infra: DatabaseInfra, project_id: str, raw_ids: list[str]
+) -> list[str]:
+    """Resolve command-line ids to full bead ids, dropping those that don't resolve."""
+    bead_ids: list[str] = []
+    for raw_id in raw_ids:
+        bead_id = await resolve_bead_id(db_infra, project_id, raw_id)
+        if bead_id is not None and bead_id not in bead_ids:
+            bead_ids.append(bead_id)
+    return bead_ids
+
+
+def _claim_conflict_reason(conflicts: list[tuple[str, str, str]]) -> str:
+    """Describe (bead_id, alias, human_name) conflicts for the bdh client."""
+    return "; ".join(
+        f"{bead_id} is being worked on by {alias} ({human_name})"
+        for bead_id, alias, human_name in conflicts
+    )
 
 
 async def _ensure_workspace_alive_or_410(
@@ -396,16 +430,21 @@ async def command(
 
     beads_in_progress = await _list_beads_in_progress(db_infra, project_id=project_id)
 
-    # Check if this is a claim command and the bead is already claimed by another workspace.
-    cmd, bead_id, status = _parse_command_line(payload.command_line or "")
-    if cmd == "update" and status == "in_progress" and bead_id:
-        for claim in beads_in_progress:
-            if claim["bead_id"] == bead_id and claim["workspace_id"] != payload.workspace_id:
-                return CommandResponse(
-                    approved=False,
-                    reason=f"{bead_id} is being worked on by {claim['alias']} ({claim['human_name']})",
-                    context=CommandContext(messages_waiting=0, beads_in_progress=beads_in_progress),
-                )
+    # Check if this is a claim command and a bead is already claimed by another workspace.
+    cmd, raw_ids, status = _parse_command_line(payload.command_line or "")
+    if cmd == "update" and status == "in_progress" and raw_ids:
+        conflicts = [
+            (claim["bead_id"], claim["alias"], claim["human_name"])
+            for bead_id in await _resolve_bead_ids(db_infra, project_id, raw_ids)
+            for claim in beads_in_progress
+            if claim["bead_id"] == bead_id and claim["workspace_id"] != payload.workspace_id
+        ]
+        if conflicts:
+            return CommandResponse(
+                approved=False,
+                reason=_claim_conflict_reason(conflicts),
+                context=CommandContext(messages_waiting=0, beads_in_progress=beads_in_progress),
+            )
 
     return CommandResponse(
         approved=True,
@@ -574,20 +613,24 @@ async def sync(
             inserted = result.issues_added
             updated = result.issues_updated
 
-        if payload.deleted_ids:
-            # Pre-fetch titles before deletion so events can include them.
-            deleted_titles = await _get_bead_titles(beads_db, project_id, payload.deleted_ids)
-            deleted = await delete_issues_by_id(
-                beads_db,
-                project_id=project_id,
-                bead_ids=payload.deleted_ids,
-                repo=canonical_origin,
-                branch=DEFAULT_BRANCH,
-            )
+    # Resolve the bd command's ids after this sync's beads are applied and
+    # before its deletions, so a bead this sync creates or deletes resolves.
+    cmd, raw_ids, status = _parse_command_line(payload.command_line or "")
+    bead_ids = await _resolve_bead_ids(db_infra, project_id, raw_ids)
+
+    if mode == "incremental" and payload.deleted_ids:
+        # Pre-fetch titles before deletion so events can include them.
+        deleted_titles = await _get_bead_titles(beads_db, project_id, payload.deleted_ids)
+        deleted = await delete_issues_by_id(
+            beads_db,
+            project_id=project_id,
+            bead_ids=payload.deleted_ids,
+            repo=canonical_origin,
+            branch=DEFAULT_BRANCH,
+        )
 
     # Update claims based on the bd command that succeeded (best-effort).
-    claim_conflict: Optional[dict[str, Any]] = None
-    cmd, bead_id, status = _parse_command_line(payload.command_line or "")
+    claim_conflicts: list[tuple[str, str, str]] = []
 
     # Lazy project_slug for event enrichment (only queried if needed).
     _slug_cache: list[str | None] = []  # empty = not yet fetched
@@ -602,8 +645,8 @@ async def sync(
             _slug_cache.append(row["slug"] if row else None)
         return _slug_cache[0]
 
-    if bead_id:
-        if cmd == "update" and status == "in_progress":
+    if cmd == "update" and status == "in_progress":
+        for bead_id in bead_ids:
             claim_result = await upsert_claim(
                 db_infra,
                 project_id=project_id,
@@ -612,7 +655,14 @@ async def sync(
                 human_name=payload.human_name or "",
                 bead_id=bead_id,
             )
-            claim_conflict = claim_result.conflict
+            if claim_result.conflict:
+                claim_conflicts.append(
+                    (
+                        bead_id,
+                        claim_result.conflict["alias"],
+                        claim_result.conflict["human_name"],
+                    )
+                )
             if claim_result.created:
                 title = await _get_bead_title(beads_db, project_id, bead_id)
                 await publish_event(
@@ -625,52 +675,48 @@ async def sync(
                         title=title,
                     ),
                 )
-        elif cmd in ("close", "delete") or (cmd == "update" and status and status != "in_progress"):
-            # Release ALL claims on this bead — not just the syncing
-            # workspace's.  A closed/deleted bead should have no claims.
-            claimant_ids = await release_bead_claims(
-                db_infra,
-                project_id=project_id,
-                bead_id=bead_id,
-            )
-            if claimant_ids:
-                title = await _get_bead_title(beads_db, project_id, bead_id)
-                claimant_aliases = await fetch_workspace_aliases(db_infra, project_id, claimant_ids)
-                slug = await _get_project_slug()
-                for cid in claimant_ids:
-                    await publish_event(
-                        redis,
-                        BeadUnclaimedEvent(
-                            workspace_id=cid,
-                            project_slug=slug,
-                            bead_id=bead_id,
-                            alias=claimant_aliases.get(cid, ""),
-                            title=title,
-                        ),
-                    )
 
-    if payload.deleted_ids:
-        # Deleted beads should have no claims from any workspace.
-        for bid in payload.deleted_ids:
-            claimant_ids = await release_bead_claims(
-                db_infra,
-                project_id=project_id,
-                bead_id=bid,
-            )
-            if claimant_ids:
-                claimant_aliases = await fetch_workspace_aliases(db_infra, project_id, claimant_ids)
-                slug = await _get_project_slug()
-                for cid in claimant_ids:
-                    await publish_event(
-                        redis,
-                        BeadUnclaimedEvent(
-                            workspace_id=cid,
-                            project_slug=slug,
-                            bead_id=bid,
-                            alias=claimant_aliases.get(cid, ""),
-                            title=deleted_titles.get(bid),
-                        ),
-                    )
+    # A bead that is closed, deleted or no longer in progress keeps no claims,
+    # from any workspace: release them whether the command line or the synced
+    # beads say so, so a claim can't outlive its bead.
+    release_ids: list[str] = []
+    if cmd in ("close", "delete") or (cmd == "update" and status and status != "in_progress"):
+        release_ids.extend(bead_ids)
+    if result is not None:
+        release_ids.extend(
+            change.bead_id
+            for change in result.status_changes
+            if change.new_status == "closed"
+            or (change.old_status == "in_progress" and change.new_status != "in_progress")
+        )
+    release_ids.extend(payload.deleted_ids)
+    claimed_ids = await fetch_claimed_bead_ids(db_infra, project_id, release_ids)
+    for bead_id in dict.fromkeys(release_ids):
+        if bead_id not in claimed_ids:
+            continue
+        claimant_ids = await release_bead_claims(
+            db_infra,
+            project_id=project_id,
+            bead_id=bead_id,
+        )
+        if claimant_ids:
+            if bead_id in deleted_titles:
+                title = deleted_titles[bead_id]
+            else:
+                title = await _get_bead_title(beads_db, project_id, bead_id)
+            claimant_aliases = await fetch_workspace_aliases(db_infra, project_id, claimant_ids)
+            slug = await _get_project_slug()
+            for cid in claimant_ids:
+                await publish_event(
+                    redis,
+                    BeadUnclaimedEvent(
+                        workspace_id=cid,
+                        project_slug=slug,
+                        bead_id=bead_id,
+                        alias=claimant_aliases.get(cid, ""),
+                        title=title,
+                    ),
+                )
 
     # Record notification intents in outbox, then process them.
     notifications_sent = 0
@@ -741,10 +787,7 @@ async def sync(
         conflicts=sync_conflicts,
         conflicts_count=len(sync_conflicts),
     )
-    if claim_conflict:
+    if claim_conflicts:
         resp.claim_rejected = True
-        resp.claim_rejected_reason = (
-            f"{bead_id} is being worked on by"
-            f" {claim_conflict['alias']} ({claim_conflict['human_name']})"
-        )
+        resp.claim_rejected_reason = _claim_conflict_reason(claim_conflicts)
     return resp

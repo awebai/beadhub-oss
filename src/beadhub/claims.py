@@ -46,6 +46,22 @@ async def fetch_workspace_aliases(
     return {str(row["workspace_id"]): row["alias"] for row in rows}
 
 
+async def fetch_claimed_bead_ids(
+    db_infra: "DatabaseInfra", project_id: str, bead_ids: list[str]
+) -> set[str]:
+    """Return the subset of bead_ids that have at least one claim in the project."""
+    if not bead_ids:
+        return set()
+    server_db = db_infra.get_manager("server")
+    rows = await server_db.fetch_all(
+        "SELECT DISTINCT bead_id FROM {{tables.bead_claims}} "
+        "WHERE project_id = $1 AND bead_id = ANY($2)",
+        UUID(project_id),
+        list(set(bead_ids)),
+    )
+    return {row["bead_id"] for row in rows}
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -352,3 +368,52 @@ async def release_bead_claims(
             )
 
     return [str(ws_id) for ws_id in affected_ws_ids]
+
+
+async def resolve_bead_id(db_infra: DatabaseInfra, project_id: str, raw_id: str) -> Optional[str]:
+    """Resolve a bead id as typed on a bd command line to the bead's full id.
+
+    Follows bd's own resolution (ResolvePartialID, beads v1.3.1,
+    internal/utils/id_parser.go), against the project's synced beads:
+
+    1. the exact id;
+    2. the id without its prefix: a bead whose id is `<prefix>-<raw_id>`;
+    3. a partial id: with a prefix, a bead id that starts with it; without
+       one, a bead whose hash (the part after the prefix) starts with it.
+
+    The first rule that matches decides. Beads are stored per repo, so the
+    same id in several repos is one bead. When a rule matches several beads,
+    or nothing matches, this logs a warning and returns None.
+    """
+    beads_db = db_infra.get_manager("beads")
+    rows = await beads_db.fetch_all(
+        "SELECT DISTINCT bead_id FROM {{tables.beads_issues}} "
+        "WHERE project_id = $1 AND strpos(bead_id, $2) > 0",
+        UUID(project_id),
+        raw_id,
+    )
+    candidates = [row["bead_id"] for row in rows]
+    if raw_id in candidates:
+        return raw_id
+
+    matches = [bead_id for bead_id in candidates if bead_id.endswith("-" + raw_id)]
+    if not matches:
+        if "-" in raw_id:
+            matches = [bead_id for bead_id in candidates if bead_id.startswith(raw_id)]
+        else:
+            matches = [
+                bead_id for bead_id in candidates if bead_id.rsplit("-", 1)[-1].startswith(raw_id)
+            ]
+
+    if len(matches) == 1:
+        return matches[0]
+    if matches:
+        logger.warning(
+            "Bead id %r is ambiguous in project %s: it matches %s",
+            raw_id,
+            project_id,
+            sorted(matches),
+        )
+    else:
+        logger.warning("Bead id %r matches no bead in project %s", raw_id, project_id)
+    return None

@@ -700,41 +700,54 @@ async def test_sync_rejects_claim_when_already_claimed_by_another(db_infra, init
 
 class TestParseCommandLine:
     def test_update_claim(self):
-        cmd, bead_id, status = _parse_command_line("update bd-1 --claim")
-        assert (cmd, bead_id, status) == ("update", "bd-1", "in_progress")
+        cmd, bead_ids, status = _parse_command_line("update bd-1 --claim")
+        assert (cmd, bead_ids, status) == ("update", ["bd-1"], "in_progress")
 
     def test_update_in_progress(self):
-        cmd, bead_id, status = _parse_command_line("update bd-1 --status in_progress")
-        assert (cmd, bead_id, status) == ("update", "bd-1", "in_progress")
+        cmd, bead_ids, status = _parse_command_line("update bd-1 --status in_progress")
+        assert (cmd, bead_ids, status) == ("update", ["bd-1"], "in_progress")
 
     def test_update_with_equals(self):
-        cmd, bead_id, status = _parse_command_line("update bd-1 --status=in_progress")
-        assert (cmd, bead_id, status) == ("update", "bd-1", "in_progress")
+        cmd, bead_ids, status = _parse_command_line("update bd-1 --status=in_progress")
+        assert (cmd, bead_ids, status) == ("update", ["bd-1"], "in_progress")
 
     def test_explicit_status_wins_over_claim(self):
-        cmd, bead_id, status = _parse_command_line("update bd-1 --claim --status open")
-        assert (cmd, bead_id, status) == ("update", "bd-1", "open")
+        cmd, bead_ids, status = _parse_command_line("update bd-1 --claim --status open")
+        assert (cmd, bead_ids, status) == ("update", ["bd-1"], "open")
 
     def test_close(self):
-        cmd, bead_id, status = _parse_command_line("close bd-42")
-        assert (cmd, bead_id, status) == ("close", "bd-42", None)
+        cmd, bead_ids, status = _parse_command_line("close bd-42")
+        assert (cmd, bead_ids, status) == ("close", ["bd-42"], None)
 
     def test_ready(self):
-        cmd, bead_id, status = _parse_command_line("ready")
-        assert (cmd, bead_id, status) == ("ready", None, None)
+        cmd, bead_ids, status = _parse_command_line("ready")
+        assert (cmd, bead_ids, status) == ("ready", [], None)
 
     def test_empty(self):
-        cmd, bead_id, status = _parse_command_line("")
-        assert (cmd, bead_id, status) == (None, None, None)
+        cmd, bead_ids, status = _parse_command_line("")
+        assert (cmd, bead_ids, status) == (None, [], None)
 
     def test_bead_id_starting_with_dashes_ignored(self):
         """update --status in_progress (no bead_id) should not set bead_id to '--status'."""
-        cmd, bead_id, status = _parse_command_line("update --status in_progress")
-        assert bead_id is None
+        cmd, bead_ids, status = _parse_command_line("update --status in_progress")
+        assert bead_ids == []
 
     def test_delete(self):
-        cmd, bead_id, status = _parse_command_line("delete bd-5")
-        assert (cmd, bead_id, status) == ("delete", "bd-5", None)
+        cmd, bead_ids, status = _parse_command_line("delete bd-5")
+        assert (cmd, bead_ids, status) == ("delete", ["bd-5"], None)
+
+    def test_several_ids(self):
+        cmd, bead_ids, status = _parse_command_line("update bd-1 2 bd-3 --claim")
+        assert (cmd, bead_ids, status) == ("update", ["bd-1", "2", "bd-3"], "in_progress")
+
+    def test_ids_stop_at_first_flag(self):
+        """Words of a flag value, split by bdh's space join, are not ids."""
+        cmd, bead_ids, status = _parse_command_line("close bd-1 bd-2 --reason fixed bd-3 too")
+        assert (cmd, bead_ids, status) == ("close", ["bd-1", "bd-2"], None)
+
+    def test_short_flag_ends_ids(self):
+        cmd, bead_ids, status = _parse_command_line("update bd-1 -s open bd-2")
+        assert bead_ids == ["bd-1"]
 
 
 @pytest.mark.asyncio
