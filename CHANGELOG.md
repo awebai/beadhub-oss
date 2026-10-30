@@ -6,6 +6,10 @@ This project follows a pragmatic, OSS-friendly changelog format (similar to Keep
 
 ## Unreleased
 
+### Fixed
+- bdh claims always carry the bead's full id: ids from the `bd` command line are resolved the way `bd` resolves short and partial ids, every id of a multi-id `update`/`close` counts, and the claim conflict check compares full ids
+- A sync that shows a bead closed, deleted or leaving `in_progress` releases its claims, whatever the command line said
+
 ## 0.2.5 — 2026-02-14
 
 ### Added

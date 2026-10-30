@@ -182,7 +182,7 @@ All queries use template syntax: `{{tables.workspaces}}` resolves to `server.wor
 | `status.py` | `/v1/status` | Workspace status snapshot + SSE stream |
 
 ### The sync endpoint (`POST /v1/bdh/sync`)
-Used by the beads integration. Called by `bdh sync`. Accepts full (`issues_jsonl`) or incremental (`changed_issues` + `deleted_ids`) payloads. Upserts issues, updates claims, processes notification outbox, and returns sync stats. In native task mode, task mutations trigger claim lifecycle hooks directly via `mutation_hooks.py` instead of going through sync.
+Used by the beads integration. Called by `bdh sync`. Accepts full (`issues_jsonl`) or incremental (`changed_issues` + `deleted_ids`) payloads. Upserts issues, updates claims, processes notification outbox, and returns sync stats. Claims follow the `bd` command line the client sends with the sync (`update <ids> --claim` or `--status in_progress` claims; `close`, `delete` or `update --status <other>` releases). The ids are the tokens right after the command, up to the first flag, and each is resolved to the bead's full id the way `bd` resolves a short or partial id (`resolve_bead_id` in `claims.py`); an id that matches no bead or several creates and releases nothing and is logged as a warning. Independently of the command line, a sync that shows a bead closed, deleted or leaving `in_progress` releases every claim on it. In native task mode, task mutations trigger claim lifecycle hooks directly via `mutation_hooks.py` instead of going through sync.
 
 ## Codebase Layout
 
@@ -198,7 +198,7 @@ src/beadhub/
   presence.py          # Redis presence cache with secondary indexes
   notifications.py     # Outbox processing → aweb mail delivery
   events.py            # Redis pub/sub event bus for SSE
-  claims.py            # Bead claim lifecycle (upsert, release, apex resolution)
+  claims.py            # Bead claim lifecycle (upsert, release, apex and bead id resolution)
   mutation_hooks.py    # Translates aweb task mutations into claim lifecycle + SSE events
   beads_sync.py        # Beads issue sync logic, validation, status change tracking
   defaults.py          # Load policy defaults from markdown files
